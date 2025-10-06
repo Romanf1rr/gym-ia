@@ -1,0 +1,18 @@
+﻿{
+  "name": "gym-ia",
+  "version": "0.1.0",
+  "description": "Entrenador personal con Inteligencia Artificial",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && cd mobile-app && npm install && cd ../backend && npm install",
+    "dev": "echo Iniciando Gym IA... && echo Backend: http://localhost:3000 && echo Mobile: Ejecuta npm start en mobile-app/",
+    "setup": "node scripts/setup/create-env.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tu-usuario/gym-ia.git"
+  },
+  "keywords": ["gym", "fitness", "AI", "workout", "nutrition"],
+  "author": "Gym IA Team",
+  "license": "MIT"
+}
