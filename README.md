@@ -32,6 +32,13 @@ Gym IA es una aplicacion integral de gimnasio que combina analisis corporal con 
 4. Iniciar servicios: docker-compose up -d
 5. Iniciar desarrollo: npm run dev
 
+
+## Seguimiento del Proyecto
+
+- [PROGRESS.md](./PROGRESS.md) - Estado actual del desarrollo
+- [WORKFLOW.md](./WORKFLOW.md) - Recordatorio de workflow
+- [docs/ROADMAP.md](./docs/ROADMAP.md) - Plan completo de desarrollo
+
 ## Documentacion
 
 - [Roadmap Completo](./docs/ROADMAP.md)
@@ -61,3 +68,4 @@ MIT License - ver [LICENSE](LICENSE)
 ---
 
 Hecho con amor por el equipo de Gym IA
+
