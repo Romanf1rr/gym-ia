@@ -1,10 +1,10 @@
 ﻿# Progreso del Proyecto - Gym IA
 
-**Ultima actualizacion:** 2025-01-06
+**Ultima actualizacion:** 2025-01-07
 
-## Estado Actual: 15% Completado
+## Estado Actual: 20% Completado
 
-### Fase 1: Setup Inicial (10% → 15%)
+### Fase 1: Setup Inicial (10% → 20%)
 
 #### Completado
 - [x] Estructura completa del proyecto
@@ -17,13 +17,25 @@
 - [x] Endpoints de usuario (GET/PUT /api/v1/users/me)
 - [x] Servicio de IA con OpenAI integrado
 - [x] Documentacion basica (READMEs)
+- [x] Proyecto React Native inicializado con Expo
+- [x] Dependencias instaladas (React Navigation, Zustand, NativeWind, Axios)
+- [x] Configuracion de Tailwind CSS con NativeWind
+- [x] App base corriendo exitosamente en Expo Go
 
 #### Pendiente en Fase 1
 - [ ] Diseño UI/UX en Figma
 - [ ] Wireframes de todas las pantallas
 - [ ] Sistema de diseño (colores, tipografia)
 
-### Proximo Paso: Inicializar App Movil
+### Proximo Paso: Crear Pantallas de Autenticacion
+
+**Tareas:**
+- [ ] Configurar React Navigation con stack y tabs
+- [ ] Pantalla de Login
+- [ ] Pantalla de Registro
+- [ ] Store de autenticacion con Zustand
+- [ ] Conectar con backend API
+- [ ] Manejo de tokens JWT
 
 **Fase 2: Backend (35%)**
 La base del backend esta lista. Falta:
@@ -37,8 +49,7 @@ La base del backend esta lista. Falta:
 - [ ] Tests unitarios
 
 **Fase 3: Frontend Tablet (55%)**
-Por iniciar:
-- [ ] Setup de React Native con Expo
+- [x] Setup de React Native con Expo
 - [ ] Configurar navegacion
 - [ ] Pantallas de captura de fotos
 - [ ] Integracion con backend
@@ -57,6 +68,13 @@ Por iniciar
 
 ## Archivos Clave Creados
 
+### Mobile App
+- mobile-app/package.json - Dependencias de React Native
+- mobile-app/App.js - Componente principal
+- mobile-app/babel.config.js - Configuracion de Babel con NativeWind
+- mobile-app/tailwind.config.js - Configuracion de Tailwind
+- mobile-app/.env.example - Variables de entorno
+
 ### Backend
 - backend/package.json - Dependencias
 - backend/.env.example - Variables de entorno
@@ -70,13 +88,20 @@ Por iniciar
 - database/schemas/schema.prisma - Schema completo con 9 modelos
 
 ### Configuracion
-- mobile-app/.env.example - Config de app movil
 - docker-compose.yml - Servicios (PostgreSQL, Redis)
 
 ## Comandos Importantes
 
+### Mobile App
+cd mobile-app
+npm start (iniciar Expo)
+npm run android
+npm run ios
+npm run web
+
 ### Backend
-npm install (en backend/)
+cd backend
+npm install
 npm run db:migrate
 npm run dev
 
@@ -92,16 +117,18 @@ git push origin main
 - OpenAI GPT-4 Vision para analisis de fotos
 - JWT para autenticacion
 - AWS S3 para almacenamiento de imagenes (por configurar)
+- React Native con Expo para desarrollo mobile
+- NativeWind para estilos con Tailwind CSS
 
 ## Proxima Sesion
 
-**Objetivo:** Inicializar app movil con React Native + Expo
+**Objetivo:** Crear pantallas de autenticacion
 **Tareas:**
-1. Configurar proyecto Expo
-2. Instalar dependencias
-3. Configurar navegacion (React Navigation)
-4. Crear pantallas base
-5. Setup de componentes reutilizables
+1. Configurar React Navigation
+2. Crear pantalla de Login
+3. Crear pantalla de Registro  
+4. Store de auth con Zustand
+5. API service para conectar con backend
 
 **Tiempo estimado:** 2-3 horas
-**Progreso esperado:** 15% → 20%
+**Progreso esperado:** 20% → 25%
