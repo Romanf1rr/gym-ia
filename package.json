@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "gym-ia",
   "version": "0.1.0",
   "description": "Entrenador personal con Inteligencia Artificial",
@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tu-usuario/gym-ia.git"
+    "url": "git+https://github.com/Romanf1rr/gym-ia.git"
   },
   "keywords": ["gym", "fitness", "AI", "workout", "nutrition"],
   "author": "Gym IA Team",
