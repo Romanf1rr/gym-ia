@@ -2,9 +2,9 @@
 
 **Ultima actualizacion:** 2025-01-07
 
-## Estado Actual: 20% Completado
+## Estado Actual: 25% Completado
 
-### Fase 1: Setup Inicial (10% → 20%)
+### Fase 1: Setup Inicial (10% → 25%)
 
 #### Completado
 - [x] Estructura completa del proyecto
@@ -21,21 +21,28 @@
 - [x] Dependencias instaladas (React Navigation, Zustand, NativeWind, Axios)
 - [x] Configuracion de Tailwind CSS con NativeWind
 - [x] App base corriendo exitosamente en Expo Go
+- [x] Configuracion de React Navigation (Stack Navigator)
+- [x] Pantalla de Login con validaciones
+- [x] Pantalla de Registro con validaciones
+- [x] API Service configurado con Axios e interceptors
+- [x] Auth Store con Zustand para manejo de estado
+- [x] Integracion completa con backend (pendiente iniciar servidor)
+- [x] Manejo de tokens JWT con AsyncStorage
 
 #### Pendiente en Fase 1
 - [ ] Diseño UI/UX en Figma
 - [ ] Wireframes de todas las pantallas
 - [ ] Sistema de diseño (colores, tipografia)
 
-### Proximo Paso: Crear Pantallas de Autenticacion
+### Proximo Paso: Configurar y Levantar Backend
 
 **Tareas:**
-- [ ] Configurar React Navigation con stack y tabs
-- [ ] Pantalla de Login
-- [ ] Pantalla de Registro
-- [ ] Store de autenticacion con Zustand
-- [ ] Conectar con backend API
-- [ ] Manejo de tokens JWT
+- [ ] Instalar dependencias del backend (npm install)
+- [ ] Configurar PostgreSQL con Docker
+- [ ] Ejecutar migraciones de Prisma
+- [ ] Iniciar servidor backend en desarrollo
+- [ ] Probar registro y login end-to-end
+- [ ] Verificar persistencia de sesion
 
 **Fase 2: Backend (35%)**
 La base del backend esta lista. Falta:
@@ -50,12 +57,18 @@ La base del backend esta lista. Falta:
 
 **Fase 3: Frontend Tablet (55%)**
 - [x] Setup de React Native con Expo
-- [ ] Configurar navegacion
+- [x] Configurar navegacion basica
 - [ ] Pantallas de captura de fotos
 - [ ] Integracion con backend
+- [ ] Flujo completo de onboarding
 
 **Fase 4: Frontend Movil (80%)**
-Por iniciar
+- [x] Pantallas de autenticacion
+- [ ] Dashboard principal
+- [ ] Pantallas de rutinas
+- [ ] Pantallas de nutricion
+- [ ] Pantalla de progreso
+- [ ] Chat con IA
 
 **Fase 5: IA Avanzada (90%)**
 Por iniciar
@@ -71,8 +84,13 @@ Por iniciar
 ### Mobile App
 - mobile-app/package.json - Dependencias de React Native
 - mobile-app/App.js - Componente principal
-- mobile-app/babel.config.js - Configuracion de Babel con NativeWind
-- mobile-app/tailwind.config.js - Configuracion de Tailwind
+- mobile-app/babel.config.js - Configuracion de Babel
+- mobile-app/src/navigation/AppNavigator.js - Navegador principal
+- mobile-app/src/navigation/AuthNavigator.js - Navegador de autenticacion
+- mobile-app/src/screens/mobile/LoginScreen.js - Pantalla de login
+- mobile-app/src/screens/mobile/RegisterScreen.js - Pantalla de registro
+- mobile-app/src/services/api/api.service.js - Servicio API con Axios
+- mobile-app/src/store/authStore.js - Store de autenticacion con Zustand
 - mobile-app/.env.example - Variables de entorno
 
 ### Backend
@@ -83,6 +101,7 @@ Por iniciar
 - backend/src/controllers/auth.controller.js - Logica de auth
 - backend/src/middleware/auth.middleware.js - Middleware JWT
 - backend/src/services/ai/openai.service.js - Servicio de IA
+- backend/src/utils/prisma.js - Cliente de Prisma
 
 ### Database
 - database/schemas/schema.prisma - Schema completo con 9 modelos
@@ -105,6 +124,11 @@ npm install
 npm run db:migrate
 npm run dev
 
+### Docker
+docker-compose up -d (iniciar servicios)
+docker-compose down (detener servicios)
+docker-compose logs (ver logs)
+
 ### Git
 git add .
 git commit -m "mensaje"
@@ -115,20 +139,25 @@ git push origin main
 - Usando PostgreSQL para datos principales
 - Redis para cache
 - OpenAI GPT-4 Vision para analisis de fotos
-- JWT para autenticacion
+- JWT para autenticacion con refresh tokens
 - AWS S3 para almacenamiento de imagenes (por configurar)
 - React Native con Expo para desarrollo mobile
-- NativeWind para estilos con Tailwind CSS
+- Zustand para state management
+- Axios con interceptors para requests HTTP
+- AsyncStorage para persistencia local
 
 ## Proxima Sesion
 
-**Objetivo:** Crear pantallas de autenticacion
+**Objetivo:** Levantar backend y probar autenticacion completa
 **Tareas:**
-1. Configurar React Navigation
-2. Crear pantalla de Login
-3. Crear pantalla de Registro  
-4. Store de auth con Zustand
-5. API service para conectar con backend
+1. Iniciar Docker Compose (PostgreSQL + Redis)
+2. Instalar dependencias del backend
+3. Configurar archivo .env del backend
+4. Ejecutar migraciones de Prisma
+5. Iniciar servidor backend en modo desarrollo
+6. Probar registro de usuario desde la app
+7. Probar inicio de sesion desde la app
+8. Verificar persistencia de sesion
 
-**Tiempo estimado:** 2-3 horas
-**Progreso esperado:** 20% → 25%
+**Tiempo estimado:** 1-2 horas
+**Progreso esperado:** 25% → 30%
