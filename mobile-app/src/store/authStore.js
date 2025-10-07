@@ -1,11 +1,10 @@
-﻿import { create } from 'zustand';
+import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authAPI } from '../services/api/api.service';
 
 const useAuthStore = create((set) => ({
   user: null,
-  accessToken: null,
-  refreshToken: null,
+  token: null,
   isAuthenticated: false,
   isLoading: false,
   error: null,
@@ -16,21 +15,19 @@ const useAuthStore = create((set) => ({
     try {
       const data = await authAPI.register(userData);
       
-      // Guardar tokens
-      await AsyncStorage.setItem('accessToken', data.accessToken);
-      await AsyncStorage.setItem('refreshToken', data.refreshToken);
+      // Guardar token
+      await AsyncStorage.setItem('accessToken', data.token);
       
       set({
         user: data.user,
-        accessToken: data.accessToken,
-        refreshToken: data.refreshToken,
+        token: data.token,
         isAuthenticated: true,
         isLoading: false,
       });
       
       return { success: true };
     } catch (error) {
-      const errorMessage = error.response?.data?.error || 'Error al registrarse';
+      const errorMessage = error.response?.data?.message || 'Error al registrarse';
       set({ error: errorMessage, isLoading: false });
       return { success: false, error: errorMessage };
     }
@@ -42,21 +39,19 @@ const useAuthStore = create((set) => ({
     try {
       const data = await authAPI.login(email, password);
       
-      // Guardar tokens
-      await AsyncStorage.setItem('accessToken', data.accessToken);
-      await AsyncStorage.setItem('refreshToken', data.refreshToken);
+      // Guardar token
+      await AsyncStorage.setItem('accessToken', data.token);
       
       set({
         user: data.user,
-        accessToken: data.accessToken,
-        refreshToken: data.refreshToken,
+        token: data.token,
         isAuthenticated: true,
         isLoading: false,
       });
       
       return { success: true };
     } catch (error) {
-      const errorMessage = error.response?.data?.error || 'Error al iniciar sesión';
+      const errorMessage = error.response?.data?.message || 'Error al iniciar sesión';
       set({ error: errorMessage, isLoading: false });
       return { success: false, error: errorMessage };
     }
@@ -71,12 +66,9 @@ const useAuthStore = create((set) => ({
     } finally {
       // Limpiar todo
       await AsyncStorage.removeItem('accessToken');
-      await AsyncStorage.removeItem('refreshToken');
-      
       set({
         user: null,
-        accessToken: null,
-        refreshToken: null,
+        token: null,
         isAuthenticated: false,
         error: null,
       });
@@ -87,17 +79,14 @@ const useAuthStore = create((set) => ({
   restoreSession: async () => {
     set({ isLoading: true });
     try {
-      const accessToken = await AsyncStorage.getItem('accessToken');
-      const refreshToken = await AsyncStorage.getItem('refreshToken');
+      const token = await AsyncStorage.getItem('accessToken');
       
-      if (accessToken) {
+      if (token) {
         // Obtener perfil del usuario
         const user = await authAPI.getProfile();
-        
         set({
           user,
-          accessToken,
-          refreshToken,
+          token,
           isAuthenticated: true,
           isLoading: false,
         });
@@ -105,9 +94,8 @@ const useAuthStore = create((set) => ({
         set({ isLoading: false });
       }
     } catch (error) {
-      // Si falla, limpiar tokens
+      // Si falla, limpiar token
       await AsyncStorage.removeItem('accessToken');
-      await AsyncStorage.removeItem('refreshToken');
       set({ isLoading: false });
     }
   },

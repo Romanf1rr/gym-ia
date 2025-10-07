@@ -1,10 +1,12 @@
-﻿# Progreso del Proyecto - Gym IA
+﻿# Actualizar PROGRESS.md
+$progressContent = @'
+# Progreso del Proyecto - Gym IA
 
-**Ultima actualizacion:** 2025-01-07
+**Ultima actualizacion:** 2025-10-06
 
-## Estado Actual: 25% Completado
+## Estado Actual: 30% Completado
 
-### Fase 1: Setup Inicial (10% → 25%)
+### Fase 1: Setup Inicial (10% → 30%)
 
 #### Completado
 - [x] Estructura completa del proyecto
@@ -28,21 +30,27 @@
 - [x] Auth Store con Zustand para manejo de estado
 - [x] Integracion completa con backend (pendiente iniciar servidor)
 - [x] Manejo de tokens JWT con AsyncStorage
+- [x] Docker Desktop instalado y configurado
+- [x] Contenedores Docker levantados (PostgreSQL + Redis)
+- [x] Dependencias del backend instaladas (531 paquetes)
+- [x] Migraciones de Prisma ejecutadas
+- [x] Base de datos creada con todas las tablas
+- [x] Controlador de autenticacion implementado
+- [x] Servidor backend corriendo en desarrollo (puerto 3000)
 
 #### Pendiente en Fase 1
 - [ ] Diseño UI/UX en Figma
 - [ ] Wireframes de todas las pantallas
 - [ ] Sistema de diseño (colores, tipografia)
+- [ ] Pruebas end-to-end de registro y login
 
-### Proximo Paso: Configurar y Levantar Backend
+### Proximo Paso: Probar Autenticacion End-to-End
 
 **Tareas:**
-- [ ] Instalar dependencias del backend (npm install)
-- [ ] Configurar PostgreSQL con Docker
-- [ ] Ejecutar migraciones de Prisma
-- [ ] Iniciar servidor backend en desarrollo
-- [ ] Probar registro y login end-to-end
+- [ ] Probar registro de usuario desde la app
+- [ ] Probar inicio de sesion desde la app
 - [ ] Verificar persistencia de sesion
+- [ ] Implementar endpoints de fotos con upload
 
 **Fase 2: Backend (35%)**
 La base del backend esta lista. Falta:
@@ -50,9 +58,6 @@ La base del backend esta lista. Falta:
 - [ ] Implementar endpoints de rutinas
 - [ ] Implementar endpoints de nutricion
 - [ ] Implementar chat con IA
-- [ ] Instalar dependencias de backend (npm install)
-- [ ] Configurar Docker y PostgreSQL
-- [ ] Ejecutar migraciones de Prisma
 - [ ] Tests unitarios
 
 **Fase 3: Frontend Tablet (55%)**
@@ -94,17 +99,20 @@ Por iniciar
 - mobile-app/.env.example - Variables de entorno
 
 ### Backend
-- backend/package.json - Dependencias
-- backend/.env.example - Variables de entorno
+- backend/package.json - Dependencias (sin BOM)
+- backend/.env - Variables de entorno configuradas
+- backend/prisma/schema.prisma - Schema de base de datos
 - backend/src/index.js - Servidor Express
 - backend/src/routes/auth.routes.js - Rutas de auth
 - backend/src/controllers/auth.controller.js - Logica de auth
+- backend/src/controllers/user.controller.js - Logica de usuarios
 - backend/src/middleware/auth.middleware.js - Middleware JWT
 - backend/src/services/ai/openai.service.js - Servicio de IA
 - backend/src/utils/prisma.js - Cliente de Prisma
 
 ### Database
-- database/schemas/schema.prisma - Schema completo con 9 modelos
+- backend/prisma/schema.prisma - Schema completo con 9 modelos
+- backend/prisma/migrations/ - Migraciones aplicadas
 
 ### Configuracion
 - docker-compose.yml - Servicios (PostgreSQL, Redis)
@@ -121,15 +129,18 @@ npm run web
 ### Backend
 cd backend
 npm install
-npm run db:migrate
+npx prisma generate
+npx prisma migrate dev
 npm run dev
 
 ### Docker
-docker-compose up -d (iniciar servicios)
-docker-compose down (detener servicios)
-docker-compose logs (ver logs)
+docker compose up -d (iniciar servicios)
+docker compose down (detener servicios)
+docker compose ps (ver estado)
+docker compose logs (ver logs)
 
 ### Git
+git status
 git add .
 git commit -m "mensaje"
 git push origin main
@@ -145,19 +156,20 @@ git push origin main
 - Zustand para state management
 - Axios con interceptors para requests HTTP
 - AsyncStorage para persistencia local
+- Docker Desktop en Windows con WSL 2
 
 ## Proxima Sesion
 
-**Objetivo:** Levantar backend y probar autenticacion completa
+**Objetivo:** Probar autenticacion completa y comenzar con endpoints de fotos
 **Tareas:**
-1. Iniciar Docker Compose (PostgreSQL + Redis)
-2. Instalar dependencias del backend
-3. Configurar archivo .env del backend
-4. Ejecutar migraciones de Prisma
-5. Iniciar servidor backend en modo desarrollo
-6. Probar registro de usuario desde la app
-7. Probar inicio de sesion desde la app
-8. Verificar persistencia de sesion
+1. Probar registro de usuario desde mobile app
+2. Probar login desde mobile app
+3. Verificar persistencia de sesion
+4. Implementar endpoints de fotos (upload)
+5. Configurar S3 o alternativa para almacenamiento
 
-**Tiempo estimado:** 1-2 horas
-**Progreso esperado:** 25% → 30%
+**Tiempo estimado:** 2-3 horas
+**Progreso esperado:** 30% → 35%
+'@
+
+[System.IO.File]::WriteAllText("$PWD\PROGRESS.md", $progressContent)

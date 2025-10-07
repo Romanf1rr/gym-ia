@@ -1,8 +1,9 @@
-﻿const express = require('express');
+require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
+
+const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-require('dotenv').config();
 
 const app = express();
 
@@ -54,7 +55,6 @@ app.use((req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, () => {
   console.log('Server running on port ' + PORT);
   console.log('Environment: ' + process.env.NODE_ENV);
