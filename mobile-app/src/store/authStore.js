@@ -14,17 +14,13 @@ const useAuthStore = create((set) => ({
     set({ isLoading: true, error: null });
     try {
       const data = await authAPI.register(userData);
-      
-      // Guardar token
       await AsyncStorage.setItem('accessToken', data.token);
-      
       set({
         user: data.user,
         token: data.token,
         isAuthenticated: true,
         isLoading: false,
       });
-      
       return { success: true };
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Error al registrarse';
@@ -38,17 +34,13 @@ const useAuthStore = create((set) => ({
     set({ isLoading: true, error: null });
     try {
       const data = await authAPI.login(email, password);
-      
-      // Guardar token
       await AsyncStorage.setItem('accessToken', data.token);
-      
       set({
         user: data.user,
         token: data.token,
         isAuthenticated: true,
         isLoading: false,
       });
-      
       return { success: true };
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Error al iniciar sesión';
@@ -64,7 +56,6 @@ const useAuthStore = create((set) => ({
     } catch (error) {
       console.log('Error al hacer logout:', error);
     } finally {
-      // Limpiar todo
       await AsyncStorage.removeItem('accessToken');
       set({
         user: null,
@@ -80,9 +71,7 @@ const useAuthStore = create((set) => ({
     set({ isLoading: true });
     try {
       const token = await AsyncStorage.getItem('accessToken');
-      
       if (token) {
-        // Obtener perfil del usuario
         const user = await authAPI.getProfile();
         set({
           user,
@@ -94,7 +83,6 @@ const useAuthStore = create((set) => ({
         set({ isLoading: false });
       }
     } catch (error) {
-      // Si falla, limpiar token
       await AsyncStorage.removeItem('accessToken');
       set({ isLoading: false });
     }
@@ -104,4 +92,6 @@ const useAuthStore = create((set) => ({
   clearError: () => set({ error: null }),
 }));
 
+// Exportar tanto por defecto como nombrado
+export const useAuth = useAuthStore;
 export default useAuthStore;

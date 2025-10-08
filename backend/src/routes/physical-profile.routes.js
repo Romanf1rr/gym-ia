@@ -7,7 +7,7 @@ const authMiddleware = require('../middleware/auth.middleware');
 router.use(authMiddleware);
 
 // Obtener todos los perfiles físicos del usuario
-router.get('/', physicalProfileController.getPhysicalProfile);
+router.get('/', physicalProfileController.getPhysicalProfiles);
 
 // Obtener último perfil físico
 router.get('/latest', physicalProfileController.getLatestProfile);

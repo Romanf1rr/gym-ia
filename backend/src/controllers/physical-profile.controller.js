@@ -1,47 +1,26 @@
 const { PrismaClient } = require('@prisma/client');
-
 const prisma = new PrismaClient();
 
-// Obtener perfil físico del usuario
-exports.getPhysicalProfile = async (req, res) => {
+const getPhysicalProfiles = async (req, res) => {
   try {
     const userId = req.user.userId;
 
     const profiles = await prisma.perfilFisico.findMany({
       where: { userId },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
 
-    res.json({ profiles });
+    res.json(profiles);
   } catch (error) {
-    console.error('Error al obtener perfil físico:', error);
-    res.status(500).json({ message: 'Error al obtener perfil físico' });
+    console.error('Error obteniendo perfiles físicos:', error);
+    res.status(500).json({ 
+      message: 'Error al obtener perfiles físicos',
+      error: error.message 
+    });
   }
 };
 
-// Obtener último perfil físico
-exports.getLatestProfile = async (req, res) => {
-  try {
-    const userId = req.user.userId;
-
-    const profile = await prisma.perfilFisico.findFirst({
-      where: { userId },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    if (!profile) {
-      return res.status(404).json({ message: 'No se encontró perfil físico' });
-    }
-
-    res.json(profile);
-  } catch (error) {
-    console.error('Error al obtener perfil físico:', error);
-    res.status(500).json({ message: 'Error al obtener perfil físico' });
-  }
-};
-
-// Crear nuevo perfil físico
-exports.createPhysicalProfile = async (req, res) => {
+const createPhysicalProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
     const {
@@ -49,41 +28,77 @@ exports.createPhysicalProfile = async (req, res) => {
       peso,
       porcentajeGrasa,
       masaMuscular,
-      circunferenciaBrazo,
-      circunferenciaPecho,
-      circunferenciaCintura,
-      circunferenciaCadera,
-      circunferenciaMuslo,
+      brazo,
+      pecho,
+      cintura,
+      cadera,
+      muslo,
       notas
     } = req.body;
 
-    // Calcular IMC
-    const alturaEnMetros = altura / 100;
-    const imc = peso / (alturaEnMetros * alturaEnMetros);
+    if (!altura || !peso) {
+      return res.status(400).json({ 
+        message: 'Altura y peso son requeridos' 
+      });
+    }
+
+    const alturaMetros = altura / 100;
+    const imc = peso / (alturaMetros * alturaMetros);
 
     const profile = await prisma.perfilFisico.create({
       data: {
         userId,
-        altura,
-        peso,
+        altura: parseFloat(altura),
+        peso: parseFloat(peso),
         imc: parseFloat(imc.toFixed(2)),
-        porcentajeGrasa,
-        masaMuscular,
-        circunferenciaBrazo,
-        circunferenciaPecho,
-        circunferenciaCintura,
-        circunferenciaCadera,
-        circunferenciaMuslo,
-        notas
-      }
+        porcentajeGrasa: porcentajeGrasa ? parseFloat(porcentajeGrasa) : null,
+        masaMuscular: masaMuscular ? parseFloat(masaMuscular) : null,
+        circunferenciaBrazo: brazo ? parseFloat(brazo) : null,
+        circunferenciaPecho: pecho ? parseFloat(pecho) : null,
+        circunferenciaCintura: cintura ? parseFloat(cintura) : null,
+        circunferenciaCadera: cadera ? parseFloat(cadera) : null,
+        circunferenciaMuslo: muslo ? parseFloat(muslo) : null,
+        notas: notas || null,
+      },
     });
 
-    res.status(201).json({
-      message: 'Perfil físico creado exitosamente',
-      profile
-    });
+    res.status(201).json(profile);
   } catch (error) {
-    console.error('Error al crear perfil físico:', error);
-    res.status(500).json({ message: 'Error al crear perfil físico' });
+    console.error('Error creando perfil físico:', error);
+    res.status(500).json({ 
+      message: 'Error al crear perfil físico',
+      error: error.message 
+    });
   }
+};
+
+const getLatestProfile = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const profile = await prisma.perfilFisico.findFirst({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!profile) {
+      return res.status(404).json({ 
+        message: 'No se encontró ningún perfil físico' 
+      });
+    }
+
+    res.json(profile);
+  } catch (error) {
+    console.error('Error obteniendo último perfil:', error);
+    res.status(500).json({ 
+      message: 'Error al obtener último perfil',
+      error: error.message 
+    });
+  }
+};
+
+module.exports = {
+  getPhysicalProfiles,
+  createPhysicalProfile,
+  getLatestProfile
 };
