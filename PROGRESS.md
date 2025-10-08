@@ -1,14 +1,10 @@
-﻿cd "C:\Users\rrrom\Gym IA\gym-ia"
-
-# Actualizar PROGRESS.md
-$progressContent = @'
 # Progreso del Proyecto - Gym IA
 
 **Ultima actualizacion:** 2025-10-07
 
-## Estado Actual: 35% Completado
+## Estado Actual: 40% Completado
 
-### Fase 1: Setup Inicial y Backend Básico (10% → 35%)
+### Fase 1: Setup y Backend Básico (10% → 40%)
 
 #### Completado
 - [x] Estructura completa del proyecto
@@ -25,7 +21,7 @@ $progressContent = @'
 - [x] Dependencias instaladas (React Navigation, Zustand, NativeWind, Axios)
 - [x] Configuracion de Tailwind CSS con NativeWind
 - [x] App base corriendo exitosamente en Expo Go
-- [x] Configuracion de React Navigation (Stack Navigator)
+- [x] Configuracion de React Navigation (Stack + Tabs)
 - [x] Pantalla de Login con validaciones
 - [x] Pantalla de Registro con validaciones
 - [x] API Service configurado con Axios e interceptors
@@ -44,23 +40,41 @@ $progressContent = @'
 - [x] Login de usuario end-to-end exitoso
 - [x] Sesion persistente funcionando
 - [x] Usuario de prueba creado: Roman Reyes
+- [x] Navegacion con Bottom Tabs (Inicio, Rutinas, Progreso, Perfil)
+- [x] Dashboard principal con estadisticas y acciones rapidas
+- [x] Pantalla de Rutinas (estado vacio)
+- [x] Pantalla de Progreso (estado vacio)
+- [x] Pantalla de Perfil de usuario
+- [x] Stack Navigator para navegacion anidada en Perfil
+- [x] Endpoints de perfil fisico (GET, POST)
+- [x] Controlador de perfil fisico con calculo de IMC
+- [x] Pantalla de formulario de perfil fisico
+- [x] Guardado de perfil fisico funcionando
+- [x] Middleware de autenticacion corregido (req.user)
 
 #### Pendiente en Fase 1
 - [ ] Diseño UI/UX en Figma
 - [ ] Wireframes de todas las pantallas
 - [ ] Sistema de diseño (colores, tipografia)
 
-### Proximo Paso: Dashboard y Perfil de Usuario
+### Proximo Paso: Mejorar Dashboard y Configurar Tablet
 
-**Tareas:**
-- [ ] Crear pantalla de Dashboard principal
-- [ ] Implementar pantalla de perfil de usuario
-- [ ] Crear formulario de perfil fisico
-- [ ] Implementar endpoints de perfil fisico en backend
-- [ ] Agregar navegacion entre pantallas
+**Tareas Mobile:**
+- [ ] Mostrar datos de perfil fisico en Dashboard (peso, IMC)
+- [ ] Pantalla de historial de perfiles fisicos
+- [ ] Graficas de progreso (peso, mediciones)
+- [ ] Implementar pantalla de editar perfil usuario
 
-**Fase 2: Backend Avanzado (40%)**
+**Tareas Tablet:**
+- [ ] Configurar interfaz para tablet
+- [ ] Implementar captura de fotos (frente, lateral, espalda)
+- [ ] Integracion con OpenAI Vision para analisis
+- [ ] Upload de fotos a S3 o alternativa
+- [ ] Generacion automatica de rutinas con IA
+
+**Fase 2: Backend Avanzado (45%)**
 - [x] Autenticacion completa funcionando
+- [x] Endpoints de perfil fisico
 - [ ] Implementar endpoints de fotos con upload a S3
 - [ ] Implementar endpoints de rutinas
 - [ ] Implementar endpoints de nutricion
@@ -77,10 +91,11 @@ $progressContent = @'
 
 **Fase 4: Frontend Movil (80%)**
 - [x] Pantallas de autenticacion
-- [ ] Dashboard principal
+- [x] Dashboard principal
+- [x] Navegacion con tabs
 - [ ] Pantallas de rutinas
 - [ ] Pantallas de nutricion
-- [ ] Pantalla de progreso
+- [ ] Pantalla de progreso con graficas
 - [ ] Chat con IA
 
 **Fase 5: IA Avanzada (90%)**
@@ -101,8 +116,14 @@ Por iniciar
 - mobile-app/.env - Variables de entorno (API_URL con IP local)
 - mobile-app/src/navigation/AppNavigator.js - Navegador principal
 - mobile-app/src/navigation/AuthNavigator.js - Navegador de autenticacion
+- mobile-app/src/navigation/TabNavigator.js - Navegador de tabs con Stack anidado
 - mobile-app/src/screens/mobile/LoginScreen.js - Pantalla de login
 - mobile-app/src/screens/mobile/RegisterScreen.js - Pantalla de registro
+- mobile-app/src/screens/mobile/DashboardScreen.js - Dashboard principal
+- mobile-app/src/screens/mobile/RoutinesScreen.js - Pantalla de rutinas
+- mobile-app/src/screens/mobile/ProgressScreen.js - Pantalla de progreso
+- mobile-app/src/screens/mobile/ProfileScreen.js - Pantalla de perfil
+- mobile-app/src/screens/mobile/PhysicalProfileScreen.js - Formulario perfil fisico
 - mobile-app/src/services/api/api.service.js - Servicio API con Axios
 - mobile-app/src/store/authStore.js - Store de autenticacion con Zustand
 
@@ -113,9 +134,11 @@ Por iniciar
 - backend/prisma/migrations/ - Migraciones aplicadas
 - backend/src/index.js - Servidor Express con dotenv
 - backend/src/routes/auth.routes.js - Rutas de auth
+- backend/src/routes/physical-profile.routes.js - Rutas de perfil fisico
 - backend/src/controllers/auth.controller.js - Logica de auth completa
 - backend/src/controllers/user.controller.js - Logica de usuarios
-- backend/src/middleware/auth.middleware.js - Middleware JWT
+- backend/src/controllers/physical-profile.controller.js - Logica de perfil fisico
+- backend/src/middleware/auth.middleware.js - Middleware JWT (corregido)
 - backend/src/services/ai/openai.service.js - Servicio de IA
 - backend/src/utils/prisma.js - Cliente de Prisma
 
@@ -168,6 +191,7 @@ git push origin main
 - AsyncStorage para persistencia local
 - Docker Desktop en Windows con WSL 2
 - IP local para desarrollo: 192.168.1.65
+- Bottom Tab Navigator con Stack Navigator anidado para navegacion compleja
 
 ## Problemas Resueltos
 
@@ -175,20 +199,18 @@ git push origin main
 2. **Variables de entorno no cargando**: Movido require('dotenv').config() al inicio de index.js
 3. **Desajuste en estructura de tokens**: Actualizado authStore para usar 'token' en lugar de 'accessToken'
 4. **Politica de ejecucion de scripts**: Configurado ExecutionPolicy en PowerShell
+5. **Middleware de autenticacion**: Corregido para usar req.user en lugar de req.userId
+6. **Navegacion anidada**: Implementado Stack Navigator dentro de Tab Navigator para flujo de perfil
 
 ## Proxima Sesion
 
-**Objetivo:** Crear Dashboard y pantallas de perfil de usuario
+**Objetivo:** Mejorar Dashboard con datos reales y comenzar con tablet para captura de fotos
 **Tareas:**
-1. Diseñar y crear pantalla de Dashboard principal
-2. Implementar pantalla de perfil de usuario
-3. Crear formulario de perfil fisico (altura, peso, mediciones)
-4. Implementar endpoints de perfil fisico en backend
-5. Agregar navegacion drawer o tabs
-6. Probar flujo completo de usuario autenticado
+1. Obtener ultimo perfil fisico y mostrarlo en Dashboard
+2. Crear pantalla de historial de perfiles fisicos
+3. Configurar interfaz de tablet para captura de fotos
+4. Implementar flujo de captura de 3 fotos (frente, lateral, espalda)
+5. Preparar integracion con OpenAI Vision API
 
-**Tiempo estimado:** 2-3 horas
-**Progreso esperado:** 35% → 40%
-'@
-
-[System.IO.File]::WriteAllText("$PWD\PROGRESS.md", $progressContent)
+**Tiempo estimado:** 3-4 horas
+**Progreso esperado:** 40% → 45%

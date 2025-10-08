@@ -33,6 +33,7 @@ app.get('/health', (req, res) => {
 // API Routes
 app.use('/api/v1/auth', require('./routes/auth.routes'));
 app.use('/api/v1/users', require('./routes/user.routes'));
+app.use('/api/v1/physical-profiles', require('./routes/physical-profile.routes'));
 app.use('/api/v1/photos', require('./routes/photo.routes'));
 app.use('/api/v1/routines', require('./routes/routine.routes'));
 app.use('/api/v1/nutrition', require('./routes/nutrition.routes'));

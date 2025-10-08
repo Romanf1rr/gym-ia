@@ -1,9 +1,11 @@
-﻿import React, { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, ActivityIndicator, StyleSheet, Text, TouchableOpacity } from 'react-native';
-import AuthNavigator from './AuthNavigator';
+import { ActivityIndicator, View } from 'react-native';
+
 import useAuthStore from '../store/authStore';
+import AuthNavigator from './AuthNavigator';
+import TabNavigator from './TabNavigator';
 
 const Stack = createNativeStackNavigator();
 
@@ -16,8 +18,8 @@ export default function AppNavigator() {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#a855f7" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f172a' }}>
+        <ActivityIndicator size="large" color="#8b5cf6" />
       </View>
     );
   }
@@ -25,55 +27,12 @@ export default function AppNavigator() {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!isAuthenticated ? (
-          <Stack.Screen name="Auth" component={AuthNavigator} />
+        {isAuthenticated ? (
+          <Stack.Screen name="Main" component={TabNavigator} />
         ) : (
-          <Stack.Screen name="Main" component={MainPlaceholder} />
+          <Stack.Screen name="Auth" component={AuthNavigator} />
         )}
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
-
-function MainPlaceholder() {
-  const { logout, user } = useAuthStore();
-  
-  return (
-    <View style={styles.mainContainer}>
-      <Text style={styles.welcomeText}>Bienvenido, {user?.nombre}!</Text>
-      <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-        <Text style={styles.logoutText}>Cerrar Sesión</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#0f172a',
-  },
-  mainContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#0f172a',
-  },
-  welcomeText: {
-    fontSize: 24,
-    color: '#fff',
-    marginBottom: 20,
-  },
-  logoutButton: {
-    backgroundColor: '#a855f7',
-    padding: 16,
-    borderRadius: 12,
-  },
-  logoutText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
