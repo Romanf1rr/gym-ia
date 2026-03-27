@@ -13,10 +13,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { api } from '../../services/api/api.service';
+import { useTheme } from '../../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
 export default function PhysicalProfileScreen({ navigation }) {
+  const { theme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     altura: '',
@@ -81,27 +83,27 @@ export default function PhysicalProfileScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.bg }]} edges={['bottom']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
         <ScrollView style={styles.scrollView}>
           <View style={styles.header}>
-            <Text style={styles.title}>Perfil Físico</Text>
-            <Text style={styles.subtitle}>Registra tus mediciones actuales</Text>
+            <Text style={[styles.title, { color: theme.text }]}>Perfil Físico</Text>
+            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Registra tus mediciones actuales</Text>
           </View>
 
           {/* Datos básicos */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Datos básicos *</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Datos básicos *</Text>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Altura (cm)</Text>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Altura (cm)</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
                 placeholder="Ej: 175"
-                placeholderTextColor="#64748b"
+                placeholderTextColor={theme.textMuted}
                 keyboardType="numeric"
                 value={formData.altura}
                 onChangeText={(value) => handleInputChange('altura', value)}
@@ -109,11 +111,11 @@ export default function PhysicalProfileScreen({ navigation }) {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Peso (kg)</Text>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Peso (kg)</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
                 placeholder="Ej: 75"
-                placeholderTextColor="#64748b"
+                placeholderTextColor={theme.textMuted}
                 keyboardType="numeric"
                 value={formData.peso}
                 onChangeText={(value) => handleInputChange('peso', value)}
@@ -123,14 +125,14 @@ export default function PhysicalProfileScreen({ navigation }) {
 
           {/* Composición corporal */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Composición corporal (opcional)</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Composición corporal (opcional)</Text>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Porcentaje de grasa (%)</Text>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Porcentaje de grasa (%)</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
                 placeholder="Ej: 15"
-                placeholderTextColor="#64748b"
+                placeholderTextColor={theme.textMuted}
                 keyboardType="numeric"
                 value={formData.porcentajeGrasa}
                 onChangeText={(value) => handleInputChange('porcentajeGrasa', value)}
@@ -138,11 +140,11 @@ export default function PhysicalProfileScreen({ navigation }) {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Masa muscular (kg)</Text>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Masa muscular (kg)</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
                 placeholder="Ej: 60"
-                placeholderTextColor="#64748b"
+                placeholderTextColor={theme.textMuted}
                 keyboardType="numeric"
                 value={formData.masaMuscular}
                 onChangeText={(value) => handleInputChange('masaMuscular', value)}
@@ -152,14 +154,14 @@ export default function PhysicalProfileScreen({ navigation }) {
 
           {/* Circunferencias */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Circunferencias (cm, opcional)</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Circunferencias (cm, opcional)</Text>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Brazo</Text>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Brazo</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
                 placeholder="Ej: 35"
-                placeholderTextColor="#64748b"
+                placeholderTextColor={theme.textMuted}
                 keyboardType="numeric"
                 value={formData.circunferenciaBrazo}
                 onChangeText={(value) => handleInputChange('circunferenciaBrazo', value)}
@@ -167,11 +169,11 @@ export default function PhysicalProfileScreen({ navigation }) {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Pecho</Text>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Pecho</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
                 placeholder="Ej: 100"
-                placeholderTextColor="#64748b"
+                placeholderTextColor={theme.textMuted}
                 keyboardType="numeric"
                 value={formData.circunferenciaPecho}
                 onChangeText={(value) => handleInputChange('circunferenciaPecho', value)}
@@ -179,11 +181,11 @@ export default function PhysicalProfileScreen({ navigation }) {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Cintura</Text>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Cintura</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
                 placeholder="Ej: 85"
-                placeholderTextColor="#64748b"
+                placeholderTextColor={theme.textMuted}
                 keyboardType="numeric"
                 value={formData.circunferenciaCintura}
                 onChangeText={(value) => handleInputChange('circunferenciaCintura', value)}
@@ -191,11 +193,11 @@ export default function PhysicalProfileScreen({ navigation }) {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Cadera</Text>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Cadera</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
                 placeholder="Ej: 95"
-                placeholderTextColor="#64748b"
+                placeholderTextColor={theme.textMuted}
                 keyboardType="numeric"
                 value={formData.circunferenciaCadera}
                 onChangeText={(value) => handleInputChange('circunferenciaCadera', value)}
@@ -203,11 +205,11 @@ export default function PhysicalProfileScreen({ navigation }) {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Muslo</Text>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Muslo</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
                 placeholder="Ej: 55"
-                placeholderTextColor="#64748b"
+                placeholderTextColor={theme.textMuted}
                 keyboardType="numeric"
                 value={formData.circunferenciaMuslo}
                 onChangeText={(value) => handleInputChange('circunferenciaMuslo', value)}
@@ -217,11 +219,11 @@ export default function PhysicalProfileScreen({ navigation }) {
 
           {/* Notas */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Notas adicionales (opcional)</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Notas adicionales (opcional)</Text>
             <TextInput
-              style={[styles.input, styles.textArea]}
+              style={[styles.input, styles.textArea, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
               placeholder="Observaciones, objetivos, etc."
-              placeholderTextColor="#64748b"
+              placeholderTextColor={theme.textMuted}
               multiline
               numberOfLines={4}
               value={formData.notas}
@@ -230,7 +232,7 @@ export default function PhysicalProfileScreen({ navigation }) {
           </View>
 
           <TouchableOpacity
-            style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+            style={[styles.submitButton, { backgroundColor: theme.primary }, loading && styles.submitButtonDisabled]}
             onPress={handleSubmit}
             disabled={loading}
           >
@@ -247,7 +249,6 @@ export default function PhysicalProfileScreen({ navigation }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0f172a',
   },
   container: {
     flex: 1,
@@ -263,12 +264,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: width > 400 ? 28 : 24,
     fontWeight: 'bold',
-    color: '#fff',
     marginBottom: 4,
   },
   subtitle: {
     fontSize: width > 400 ? 16 : 14,
-    color: '#94a3b8',
   },
   section: {
     paddingHorizontal: width * 0.06,
@@ -277,7 +276,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
     marginBottom: 16,
   },
   inputGroup: {
@@ -285,25 +283,20 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: '#94a3b8',
     marginBottom: 8,
     fontWeight: '500',
   },
   input: {
-    backgroundColor: '#1e293b',
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: '#fff',
     borderWidth: 1,
-    borderColor: '#334155',
   },
   textArea: {
     height: 100,
     textAlignVertical: 'top',
   },
   submitButton: {
-    backgroundColor: '#8b5cf6',
     marginHorizontal: width * 0.06,
     marginVertical: 20,
     padding: 16,

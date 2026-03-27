@@ -21,16 +21,20 @@ Gym IA es una aplicacion integral de gimnasio que combina analisis corporal con 
 
 ### Prerequisitos
 - Node.js 18.x o superior
-- PostgreSQL 15+
-- Redis 7+
-- Expo CLI
+- Expo CLI (`npm install -g expo-cli`)
+- Cuenta en Supabase (supabase.com)
+- Cuenta en Upstash (upstash.com)
+- API Key de OpenAI
+- API Key de ExerciseDB (RapidAPI)
 
 ### Instalacion
 1. Clonar el repositorio
-2. Instalar dependencias: npm run install:all
-3. Configurar entorno: npm run setup
-4. Iniciar servicios: docker-compose up -d
-5. Iniciar desarrollo: npm run dev
+2. Instalar dependencias: `npm run install:all`
+3. Configurar `backend/.env` con las variables requeridas (ver PROGRESS.md)
+4. Crear `mobile-app/.env` con la URL del backend
+5. Correr migraciones: `cd backend && npx prisma migrate deploy`
+6. Iniciar backend: `cd backend && npm run dev`
+7. Iniciar mobile: `cd mobile-app && npx expo start`
 
 
 ## Seguimiento del Proyecto
@@ -47,10 +51,13 @@ Gym IA es una aplicacion integral de gimnasio que combina analisis corporal con 
 
 ## Stack Tecnologico
 
-**Frontend:** React Native, TypeScript, Zustand, NativeWind  
-**Backend:** Node.js, Express, PostgreSQL, Redis  
-**IA:** OpenAI GPT-4 Vision, MediaPipe  
-**DevOps:** Docker, AWS, GitHub Actions
+**Frontend:** Expo (React Native), Zustand, NativeWind, react-native-body-highlighter, expo-av
+**Backend:** Node.js, Express, Prisma
+**Base de datos:** Supabase (PostgreSQL + Storage)
+**Caché:** Upstash Redis
+**IA:** OpenAI GPT-4o (texto + visión)
+**Ejercicios:** ExerciseDB API (GIFs + músculos)
+**DevOps:** EAS Build, GitHub Actions
 
 ## Progreso del Proyecto
 

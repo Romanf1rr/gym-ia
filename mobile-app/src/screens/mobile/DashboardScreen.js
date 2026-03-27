@@ -1,255 +1,174 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Dimensions, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../store/authStore';
+import { useTheme } from '../../context/ThemeContext';
 import { api } from '../../services/api/api.service';
 
 const { width, height } = Dimensions.get('window');
 
 export default function DashboardScreen({ navigation }) {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [physicalProfile, setPhysicalProfile] = useState(null);
+  const [calories, setCalories] = useState(0);
 
-  const loadPhysicalProfile = async () => {
+  const loadData = async () => {
     try {
-      const response = await api.get('/physical-profiles');
-      
-      if (response.data && response.data.length > 0) {
-        const latestProfile = response.data[0];
-        setPhysicalProfile(latestProfile);
+      const [profileRes, nutritionRes] = await Promise.all([
+        api.get('/physical-profiles').catch(() => ({ data: [] })),
+        api.get('/nutrition/today').catch(() => ({ data: null })),
+      ]);
+
+      if (profileRes.data && profileRes.data.length > 0) {
+        setPhysicalProfile(profileRes.data[0]);
       } else {
         setPhysicalProfile(null);
       }
+
+      if (nutritionRes.data && nutritionRes.data.totales) {
+        setCalories(nutritionRes.data.totales.calorias || 0);
+      } else {
+        setCalories(0);
+      }
     } catch (error) {
-      console.error('Error cargando perfil físico:', error);
+      console.error('Error cargando dashboard:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Recargar datos cada vez que la pantalla gana foco
   useFocusEffect(
     React.useCallback(() => {
-      loadPhysicalProfile();
+      loadData();
     }, [])
   );
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadPhysicalProfile();
+    await loadData();
     setRefreshing(false);
   };
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#8b5cf6" />
+      <SafeAreaView style={[{ flex: 1, backgroundColor: theme.bg, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <ScrollView 
-        style={styles.container}
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={['top']}>
+      <ScrollView
+        style={{ flex: 1, backgroundColor: theme.bg }}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8b5cf6" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />
         }
       >
-        <View style={styles.header}>
-          <Text style={styles.greeting}>¡Hola, {user?.nombre}!</Text>
-          <Text style={styles.subtitle}>Listo para entrenar hoy</Text>
+        <View style={{ paddingHorizontal: width * 0.06, paddingTop: 16, paddingBottom: 16 }}>
+          <Text style={{ fontSize: width > 400 ? 28 : 24, fontWeight: 'bold', color: theme.text, marginBottom: 4 }}>
+            ¡Hola, {user?.nombre}!
+          </Text>
+          <Text style={{ fontSize: width > 400 ? 16 : 14, color: theme.textSecondary }}>
+            Listo para entrenar hoy
+          </Text>
         </View>
 
         {/* Resumen rápido */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Ionicons name="flame" size={32} color="#f97316" />
-            <Text style={styles.statValue}>0</Text>
-            <Text style={styles.statLabel}>Calorías hoy</Text>
+        <View style={{ flexDirection: 'row', paddingHorizontal: width * 0.04, marginBottom: height * 0.03, gap: width * 0.03 }}>
+          <View style={{ flex: 1, backgroundColor: theme.card, padding: width * 0.04, borderRadius: 12, alignItems: 'center', minHeight: 110, justifyContent: 'center', borderWidth: 1, borderColor: theme.border }}>
+            <Ionicons name="flame" size={32} color={theme.orange} />
+            <Text style={{ fontSize: width > 400 ? 24 : 20, fontWeight: 'bold', color: theme.text, marginTop: 8 }}>{Math.round(calories)}</Text>
+            <Text style={{ fontSize: width > 400 ? 12 : 10, color: theme.textSecondary, marginTop: 4, textAlign: 'center' }}>Calorías hoy</Text>
           </View>
 
-          <View style={styles.statCard}>
-            <Ionicons name="fitness" size={32} color="#8b5cf6" />
-            <Text style={styles.statValue}>0</Text>
-            <Text style={styles.statLabel}>Entrenamientos</Text>
-          </View>
+          <TouchableOpacity
+            style={{ flex: 1, backgroundColor: theme.card, padding: width * 0.04, borderRadius: 12, alignItems: 'center', minHeight: 110, justifyContent: 'center', borderWidth: 1, borderColor: theme.border }}
+            onPress={() => navigation.navigate('Rutinas')}
+          >
+            <Ionicons name="fitness" size={32} color={theme.primary} />
+            <Text style={{ fontSize: width > 400 ? 14 : 12, fontWeight: '600', color: theme.primary, marginTop: 8 }}>Ver rutina</Text>
+            <Text style={{ fontSize: width > 400 ? 12 : 10, color: theme.textSecondary, marginTop: 4, textAlign: 'center' }}>Entrenamientos</Text>
+          </TouchableOpacity>
 
-          <View style={styles.statCard}>
-            <Ionicons name="trending-up" size={32} color="#10b981" />
-            <Text style={styles.statValue}>
-              {physicalProfile ? `${physicalProfile.peso}kg` : '0kg'}
+          <View style={{ flex: 1, backgroundColor: theme.card, padding: width * 0.04, borderRadius: 12, alignItems: 'center', minHeight: 110, justifyContent: 'center', borderWidth: 1, borderColor: theme.border }}>
+            <Ionicons name="trending-up" size={32} color={theme.primaryLight} />
+            <Text style={{ fontSize: width > 400 ? 24 : 20, fontWeight: 'bold', color: theme.text, marginTop: 8 }}>
+              {physicalProfile ? `${physicalProfile.peso}kg` : '—'}
             </Text>
-            <Text style={styles.statLabel}>Peso actual</Text>
+            <Text style={{ fontSize: width > 400 ? 12 : 10, color: theme.textSecondary, marginTop: 4, textAlign: 'center' }}>Peso actual</Text>
           </View>
         </View>
 
         {/* Acciones rápidas */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Acciones rápidas</Text>
-          
-          <TouchableOpacity 
-            style={styles.actionCard}
+        <View style={{ paddingHorizontal: width * 0.06, marginBottom: height * 0.03 }}>
+          <Text style={{ fontSize: width > 400 ? 18 : 16, fontWeight: 'bold', color: theme.text, marginBottom: 16 }}>
+            Acciones rápidas
+          </Text>
+
+          <TouchableOpacity
+            style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: theme.card, padding: 16, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: theme.border }}
             onPress={() => navigation.navigate('PhysicalProfile')}
           >
-            <View style={styles.actionIcon}>
-              <Ionicons name="camera" size={24} color="#8b5cf6" />
+            <View style={{ width: 48, height: 48, backgroundColor: theme.primary + '33', borderRadius: 24, justifyContent: 'center', alignItems: 'center', marginRight: 16 }}>
+              <Ionicons name="camera" size={24} color={theme.primary} />
             </View>
-            <View style={styles.actionContent}>
-              <Text style={styles.actionTitle}>Registrar progreso</Text>
-              <Text style={styles.actionSubtitle}>Toma fotos y actualiza mediciones</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: width > 400 ? 16 : 14, fontWeight: '600', color: theme.text, marginBottom: 4 }}>Registrar progreso</Text>
+              <Text style={{ fontSize: width > 400 ? 14 : 12, color: theme.textSecondary }}>Toma fotos y actualiza mediciones</Text>
             </View>
-            <Ionicons name="chevron-forward" size={24} color="#64748b" />
+            <Ionicons name="chevron-forward" size={24} color={theme.textMuted} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionCard}>
-            <View style={styles.actionIcon}>
-              <Ionicons name="restaurant" size={24} color="#f97316" />
+          <TouchableOpacity
+            style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: theme.card, padding: 16, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: theme.border }}
+            onPress={() => navigation.navigate('Nutrición')}
+          >
+            <View style={{ width: 48, height: 48, backgroundColor: theme.orange + '33', borderRadius: 24, justifyContent: 'center', alignItems: 'center', marginRight: 16 }}>
+              <Ionicons name="restaurant" size={24} color={theme.orange} />
             </View>
-            <View style={styles.actionContent}>
-              <Text style={styles.actionTitle}>Registrar comida</Text>
-              <Text style={styles.actionSubtitle}>Lleva el control de tu nutrición</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: width > 400 ? 16 : 14, fontWeight: '600', color: theme.text, marginBottom: 4 }}>Mi Dieta</Text>
+              <Text style={{ fontSize: width > 400 ? 14 : 12, color: theme.textSecondary }}>Lleva el control de tu nutrición</Text>
             </View>
-            <Ionicons name="chevron-forward" size={24} color="#64748b" />
+            <Ionicons name="chevron-forward" size={24} color={theme.textMuted} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionCard}>
-            <View style={styles.actionIcon}>
-              <Ionicons name="chatbubbles" size={24} color="#10b981" />
+          <TouchableOpacity
+            style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: theme.card, padding: 16, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: theme.border }}
+            onPress={() => navigation.navigate('Objetivos')}
+          >
+            <View style={{ width: 48, height: 48, backgroundColor: theme.primaryLight + '33', borderRadius: 24, justifyContent: 'center', alignItems: 'center', marginRight: 16 }}>
+              <Ionicons name="flag" size={24} color={theme.primaryLight} />
             </View>
-            <View style={styles.actionContent}>
-              <Text style={styles.actionTitle}>Chat con IA</Text>
-              <Text style={styles.actionSubtitle}>Pregunta sobre ejercicios y nutrición</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: width > 400 ? 16 : 14, fontWeight: '600', color: theme.text, marginBottom: 4 }}>Mis Objetivos</Text>
+              <Text style={{ fontSize: width > 400 ? 14 : 12, color: theme.textSecondary }}>Define y revisa tus metas fitness</Text>
             </View>
-            <Ionicons name="chevron-forward" size={24} color="#64748b" />
+            <Ionicons name="chevron-forward" size={24} color={theme.textMuted} />
           </TouchableOpacity>
         </View>
 
         {/* Próximo entrenamiento */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Próximo entrenamiento</Text>
-          <View style={styles.workoutCard}>
-            <Text style={styles.workoutTitle}>No tienes rutinas asignadas</Text>
-            <Text style={styles.workoutSubtitle}>Visita el gimnasio para crear tu plan personalizado</Text>
+        <View style={{ paddingHorizontal: width * 0.06, marginBottom: height * 0.03 }}>
+          <Text style={{ fontSize: width > 400 ? 18 : 16, fontWeight: 'bold', color: theme.text, marginBottom: 16 }}>
+            Próximo entrenamiento
+          </Text>
+          <View style={{ backgroundColor: theme.card, padding: 20, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: theme.border }}>
+            <Text style={{ fontSize: width > 400 ? 16 : 14, fontWeight: '600', color: theme.text, marginBottom: 8, textAlign: 'center' }}>
+              No tienes rutinas asignadas
+            </Text>
+            <Text style={{ fontSize: width > 400 ? 14 : 12, color: theme.textSecondary, textAlign: 'center' }}>
+              Visita el gimnasio para crear tu plan personalizado
+            </Text>
           </View>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#0f172a',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#0f172a',
-  },
-  header: {
-    paddingHorizontal: width * 0.06,
-    paddingTop: 16,
-    paddingBottom: 16,
-  },
-  greeting: {
-    fontSize: width > 400 ? 28 : 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: width > 400 ? 16 : 14,
-    color: '#94a3b8',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: width * 0.04,
-    marginBottom: height * 0.03,
-    gap: width * 0.03,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#1e293b',
-    padding: width * 0.04,
-    borderRadius: 12,
-    alignItems: 'center',
-    minHeight: 110,
-    justifyContent: 'center',
-  },
-  statValue: {
-    fontSize: width > 400 ? 24 : 20,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginTop: 8,
-  },
-  statLabel: {
-    fontSize: width > 400 ? 12 : 10,
-    color: '#94a3b8',
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  section: {
-    paddingHorizontal: width * 0.06,
-    marginBottom: height * 0.03,
-  },
-  sectionTitle: {
-    fontSize: width > 400 ? 18 : 16,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 16,
-  },
-  actionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1e293b',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  actionIcon: {
-    width: 48,
-    height: 48,
-    backgroundColor: '#8b5cf6',
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-    opacity: 0.2,
-  },
-  actionContent: {
-    flex: 1,
-  },
-  actionTitle: {
-    fontSize: width > 400 ? 16 : 14,
-    fontWeight: '600',
-    color: '#fff',
-    marginBottom: 4,
-  },
-  actionSubtitle: {
-    fontSize: width > 400 ? 14 : 12,
-    color: '#94a3b8',
-  },
-  workoutCard: {
-    backgroundColor: '#1e293b',
-    padding: 20,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  workoutTitle: {
-    fontSize: width > 400 ? 16 : 14,
-    fontWeight: '600',
-    color: '#fff',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  workoutSubtitle: {
-    fontSize: width > 400 ? 14 : 12,
-    color: '#94a3b8',
-    textAlign: 'center',
-  },
-});

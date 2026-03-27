@@ -15,10 +15,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { LineChart } from 'react-native-chart-kit';
 import { useFocusEffect } from '@react-navigation/native';
 import { api } from '../../services/api/api.service';
+import { useTheme } from '../../context/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
 export default function ProgressScreen({ navigation }) {
+  const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [profiles, setProfiles] = useState([]);
   const [selectedMetric, setSelectedMetric] = useState('peso');
@@ -28,9 +30,9 @@ export default function ProgressScreen({ navigation }) {
     try {
       setLoading(true);
       const response = await api.get('/physical-profiles');
-      
+
       if (response.data && response.data.length > 0) {
-        const sortedProfiles = response.data.sort((a, b) => 
+        const sortedProfiles = response.data.sort((a, b) =>
           new Date(b.createdAt) - new Date(a.createdAt)
         );
         setProfiles(sortedProfiles);
@@ -59,9 +61,9 @@ export default function ProgressScreen({ navigation }) {
 
     const labels = recentProfiles.map(p => {
       const date = new Date(p.createdAt);
-      return date.toLocaleDateString('es-MX', { 
-        day: 'numeric', 
-        month: 'short' 
+      return date.toLocaleDateString('es-MX', {
+        day: 'numeric',
+        month: 'short'
       });
     });
 
@@ -147,21 +149,21 @@ export default function ProgressScreen({ navigation }) {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]} edges={['top']}>
-        <ActivityIndicator size="large" color="#8b5cf6" />
+      <SafeAreaView style={[{ flex: 1, backgroundColor: theme.bg }, { justifyContent: 'center', alignItems: 'center' }]} edges={['top']}>
+        <ActivityIndicator size="large" color={theme.primary} />
       </SafeAreaView>
     );
   }
 
   if (profiles.length === 0) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={['top']}>
         <View style={styles.emptyContainer}>
-          <Ionicons name="bar-chart-outline" size={64} color="#64748b" />
-          <Text style={styles.emptyText}>No hay progreso registrado</Text>
-          <Text style={styles.emptySubtext}>Registra tu perfil físico para comenzar</Text>
-          <TouchableOpacity 
-            style={styles.createButton}
+          <Ionicons name="bar-chart-outline" size={64} color={theme.textMuted} />
+          <Text style={[styles.emptyText, { color: theme.text }]}>No hay progreso registrado</Text>
+          <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>Registra tu perfil físico para comenzar</Text>
+          <TouchableOpacity
+            style={[styles.createButton, { backgroundColor: theme.primary }]}
             onPress={() => navigation.navigate('Perfil', { screen: 'PhysicalProfile' })}
           >
             <Text style={styles.createButtonText}>Crear Perfil</Text>
@@ -174,22 +176,27 @@ export default function ProgressScreen({ navigation }) {
   const chartData = getChartData();
   const difference = getDifference();
 
+  // Capturar colores del tema para usar en las funciones del chartConfig
+  const chartPrimary = theme.primary;
+  const chartCard = theme.card;
+  const chartTextSecondary = theme.textSecondary;
+
   // Mostrar solo las últimas 3 mediciones o todas
   const displayedProfiles = showAllHistory ? profiles : profiles.slice(0, 3);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <ScrollView style={styles.container}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={['top']}>
+      <ScrollView style={{ flex: 1, backgroundColor: theme.bg }}>
         <View style={styles.header}>
-          <Text style={styles.title}>Mi Progreso</Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.title, { color: theme.text }]}>Mi Progreso</Text>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
             {profiles.length} {profiles.length === 1 ? 'registro' : 'registros'}
           </Text>
         </View>
 
         {/* Selector de Métricas */}
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.metricsContainer}
           contentContainerStyle={styles.metricsContent}
@@ -199,18 +206,20 @@ export default function ProgressScreen({ navigation }) {
               key={metric.key}
               style={[
                 styles.metricButton,
-                selectedMetric === metric.key && styles.metricButtonActive
+                { backgroundColor: theme.card, borderColor: theme.card },
+                selectedMetric === metric.key && { backgroundColor: theme.primary, borderColor: theme.primary }
               ]}
               onPress={() => setSelectedMetric(metric.key)}
             >
-              <Ionicons 
-                name={metric.icon} 
-                size={20} 
-                color={selectedMetric === metric.key ? '#fff' : '#8b5cf6'} 
+              <Ionicons
+                name={metric.icon}
+                size={20}
+                color={selectedMetric === metric.key ? '#fff' : theme.primary}
               />
               <Text style={[
                 styles.metricButtonText,
-                selectedMetric === metric.key && styles.metricButtonTextActive
+                { color: theme.primary },
+                selectedMetric === metric.key && { color: '#fff' }
               ]}>
                 {metric.label}
               </Text>
@@ -220,30 +229,30 @@ export default function ProgressScreen({ navigation }) {
 
         {/* Diferencia */}
         {difference && (
-          <View style={styles.differenceCard}>
-            <Ionicons 
-              name={difference.isPositive ? 'trending-up' : 'trending-down'} 
-              size={24} 
-              color={difference.isPositive ? '#ef4444' : '#10b981'} 
+          <View style={[styles.differenceCard, { backgroundColor: theme.card }]}>
+            <Ionicons
+              name={difference.isPositive ? 'trending-up' : 'trending-down'}
+              size={24}
+              color={difference.isPositive ? theme.red : theme.primary}
             />
             <Text style={[
               styles.differenceValue,
-              { color: difference.isPositive ? '#ef4444' : '#10b981' }
+              { color: difference.isPositive ? theme.red : theme.primary }
             ]}>
               {difference.isPositive ? '+' : '-'}{difference.value} {difference.unit}
             </Text>
-            <Text style={styles.differenceText}>vs. anterior</Text>
+            <Text style={[styles.differenceText, { color: theme.textSecondary }]}>vs. anterior</Text>
           </View>
         )}
 
         {/* Gráfica */}
         {chartData && chartData.datasets[0].data.some(d => d > 0) ? (
-          <View style={styles.chartContainer}>
-            <Text style={styles.chartTitle}>
+          <View style={[styles.chartContainer, { backgroundColor: theme.card }]}>
+            <Text style={[styles.chartTitle, { color: theme.text }]}>
               Evolución de {metrics.find(m => m.key === selectedMetric)?.label}
             </Text>
-            <ScrollView 
-              horizontal 
+            <ScrollView
+              horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.chartScrollContent}
             >
@@ -252,19 +261,27 @@ export default function ProgressScreen({ navigation }) {
                 width={Math.max(width - 60, chartData.labels.length * 80)}
                 height={220}
                 chartConfig={{
-                  backgroundColor: '#1e293b',
-                  backgroundGradientFrom: '#1e293b',
-                  backgroundGradientTo: '#1e293b',
+                  backgroundColor: chartCard,
+                  backgroundGradientFrom: chartCard,
+                  backgroundGradientTo: chartCard,
                   decimalPlaces: 1,
-                  color: (opacity = 1) => `rgba(139, 92, 246, ${opacity})`,
-                  labelColor: (opacity = 1) => `rgba(148, 163, 184, ${opacity})`,
+                  color: (opacity = 1) => {
+                    const hex = chartPrimary.replace('#', '');
+                    const r = parseInt(hex.substring(0, 2), 16);
+                    const g = parseInt(hex.substring(2, 4), 16);
+                    const b = parseInt(hex.substring(4, 6), 16);
+                    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+                  },
+                  labelColor: (opacity = 1) => {
+                    return `rgba(148, 163, 184, ${opacity})`;
+                  },
                   style: {
                     borderRadius: 16,
                   },
                   propsForDots: {
                     r: '6',
                     strokeWidth: '2',
-                    stroke: '#8b5cf6',
+                    stroke: chartPrimary,
                   },
                 }}
                 bezier
@@ -272,26 +289,26 @@ export default function ProgressScreen({ navigation }) {
               />
             </ScrollView>
             {profiles.length > 6 && (
-              <Text style={styles.chartNote}>Mostrando últimos 6 registros</Text>
+              <Text style={[styles.chartNote, { color: theme.textMuted }]}>Mostrando últimos 6 registros</Text>
             )}
           </View>
         ) : (
-          <View style={styles.noDataCard}>
-            <Ionicons name="information-circle-outline" size={32} color="#f97316" />
-            <Text style={styles.noDataText}>No hay datos para esta métrica</Text>
+          <View style={[styles.noDataCard, { backgroundColor: theme.card }]}>
+            <Ionicons name="information-circle-outline" size={32} color={theme.orange} />
+            <Text style={[styles.noDataText, { color: theme.textSecondary }]}>No hay datos para esta métrica</Text>
           </View>
         )}
 
         {/* Historial de Mediciones */}
         <View style={styles.historySection}>
-          <Text style={styles.sectionTitle}>Historial de Mediciones</Text>
-          
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Historial de Mediciones</Text>
+
           {displayedProfiles.map((profile, index) => (
-            <View key={profile.id} style={styles.historyCard}>
+            <View key={profile.id} style={[styles.historyCard, { backgroundColor: theme.card }]}>
               <View style={styles.historyHeader}>
                 <View style={styles.historyDate}>
-                  <Ionicons name="calendar" size={16} color="#8b5cf6" />
-                  <Text style={styles.historyDateText}>
+                  <Ionicons name="calendar" size={16} color={theme.primary} />
+                  <Text style={[styles.historyDateText, { color: theme.textSecondary }]}>
                     {new Date(profile.createdAt).toLocaleDateString('es-MX', {
                       year: 'numeric',
                       month: 'long',
@@ -300,36 +317,36 @@ export default function ProgressScreen({ navigation }) {
                   </Text>
                 </View>
                 {index === 0 && (
-                  <View style={styles.latestBadge}>
-                    <Text style={styles.latestBadgeText}>Más reciente</Text>
+                  <View style={[styles.latestBadge, { backgroundColor: theme.primary + '25' }]}>
+                    <Text style={[styles.latestBadgeText, { color: theme.primary }]}>Más reciente</Text>
                   </View>
                 )}
               </View>
 
               <View style={styles.historyData}>
                 <View style={styles.historyDataItem}>
-                  <Text style={styles.historyDataLabel}>Peso</Text>
-                  <Text style={styles.historyDataValue}>{profile.peso} kg</Text>
+                  <Text style={[styles.historyDataLabel, { color: theme.textSecondary }]}>Peso</Text>
+                  <Text style={[styles.historyDataValue, { color: theme.text }]}>{profile.peso} kg</Text>
                 </View>
 
                 <View style={styles.historyDataItem}>
-                  <Text style={styles.historyDataLabel}>IMC</Text>
-                  <Text style={styles.historyDataValue}>
+                  <Text style={[styles.historyDataLabel, { color: theme.textSecondary }]}>IMC</Text>
+                  <Text style={[styles.historyDataValue, { color: theme.text }]}>
                     {profile.imc ? profile.imc.toFixed(1) : '--'}
                   </Text>
                 </View>
 
                 {profile.porcentajeGrasa && (
                   <View style={styles.historyDataItem}>
-                    <Text style={styles.historyDataLabel}>% Grasa</Text>
-                    <Text style={styles.historyDataValue}>{profile.porcentajeGrasa}%</Text>
+                    <Text style={[styles.historyDataLabel, { color: theme.textSecondary }]}>% Grasa</Text>
+                    <Text style={[styles.historyDataValue, { color: theme.text }]}>{profile.porcentajeGrasa}%</Text>
                   </View>
                 )}
 
                 {profile.masaMuscular && (
                   <View style={styles.historyDataItem}>
-                    <Text style={styles.historyDataLabel}>Músculo</Text>
-                    <Text style={styles.historyDataValue}>{profile.masaMuscular} kg</Text>
+                    <Text style={[styles.historyDataLabel, { color: theme.textSecondary }]}>Músculo</Text>
+                    <Text style={[styles.historyDataValue, { color: theme.text }]}>{profile.masaMuscular} kg</Text>
                   </View>
                 )}
               </View>
@@ -338,17 +355,17 @@ export default function ProgressScreen({ navigation }) {
 
           {/* Botón Ver más/menos */}
           {profiles.length > 3 && (
-            <TouchableOpacity 
-              style={styles.showMoreButton}
+            <TouchableOpacity
+              style={[styles.showMoreButton, { backgroundColor: theme.card }]}
               onPress={() => setShowAllHistory(!showAllHistory)}
             >
-              <Text style={styles.showMoreText}>
+              <Text style={[styles.showMoreText, { color: theme.primary }]}>
                 {showAllHistory ? 'Ver menos' : `Ver todas (${profiles.length})`}
               </Text>
-              <Ionicons 
-                name={showAllHistory ? 'chevron-up' : 'chevron-down'} 
-                size={20} 
-                color="#8b5cf6" 
+              <Ionicons
+                name={showAllHistory ? 'chevron-up' : 'chevron-down'}
+                size={20}
+                color={theme.primary}
               />
             </TouchableOpacity>
           )}
@@ -356,11 +373,11 @@ export default function ProgressScreen({ navigation }) {
 
         {/* Sección de Fotos */}
         <View style={styles.photosSection}>
-          <Text style={styles.sectionTitle}>Fotos de Progreso</Text>
-          <View style={styles.photosPlaceholder}>
-            <Ionicons name="images-outline" size={48} color="#64748b" />
-            <Text style={styles.photosPlaceholderText}>Próximamente</Text>
-            <Text style={styles.photosPlaceholderSubtext}>Podrás subir fotos desde la tablet del gimnasio</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Fotos de Progreso</Text>
+          <View style={[styles.photosPlaceholder, { backgroundColor: theme.card }]}>
+            <Ionicons name="images-outline" size={48} color={theme.textMuted} />
+            <Text style={[styles.photosPlaceholderText, { color: theme.text }]}>Próximamente</Text>
+            <Text style={[styles.photosPlaceholderSubtext, { color: theme.textSecondary }]}>Podrás subir fotos desde la tablet del gimnasio</Text>
           </View>
         </View>
       </ScrollView>
@@ -369,14 +386,6 @@ export default function ProgressScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#0f172a',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#0f172a',
-  },
   header: {
     paddingHorizontal: width * 0.06,
     paddingTop: 16,
@@ -385,12 +394,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: width > 400 ? 28 : 24,
     fontWeight: 'bold',
-    color: '#fff',
     marginBottom: 4,
   },
   subtitle: {
     fontSize: width > 400 ? 16 : 14,
-    color: '#94a3b8',
   },
   emptyContainer: {
     flex: 1,
@@ -402,17 +409,14 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
     marginTop: 20,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#94a3b8',
     marginTop: 10,
     textAlign: 'center',
   },
   createButton: {
-    backgroundColor: '#8b5cf6',
     paddingHorizontal: 30,
     paddingVertical: 12,
     borderRadius: 12,
@@ -436,28 +440,17 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 20,
-    backgroundColor: '#1e293b',
     borderWidth: 1,
-    borderColor: '#1e293b',
-  },
-  metricButtonActive: {
-    backgroundColor: '#8b5cf6',
-    borderColor: '#8b5cf6',
   },
   metricButtonText: {
     fontSize: 14,
-    color: '#8b5cf6',
     marginLeft: 8,
     fontWeight: '600',
-  },
-  metricButtonTextActive: {
-    color: '#fff',
   },
   differenceCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1e293b',
     marginHorizontal: width * 0.06,
     marginBottom: 20,
     padding: 16,
@@ -470,10 +463,8 @@ const styles = StyleSheet.create({
   },
   differenceText: {
     fontSize: 12,
-    color: '#94a3b8',
   },
   chartContainer: {
-    backgroundColor: '#1e293b',
     marginHorizontal: width * 0.06,
     marginBottom: 20,
     padding: 16,
@@ -482,7 +473,6 @@ const styles = StyleSheet.create({
   chartTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
     marginBottom: 16,
   },
   chartScrollContent: {
@@ -493,13 +483,11 @@ const styles = StyleSheet.create({
   },
   chartNote: {
     fontSize: 12,
-    color: '#64748b',
     marginTop: 12,
     textAlign: 'center',
     fontStyle: 'italic',
   },
   noDataCard: {
-    backgroundColor: '#1e293b',
     marginHorizontal: width * 0.06,
     marginBottom: 20,
     padding: 30,
@@ -508,7 +496,6 @@ const styles = StyleSheet.create({
   },
   noDataText: {
     fontSize: 14,
-    color: '#94a3b8',
     marginTop: 10,
     textAlign: 'center',
   },
@@ -519,11 +506,9 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
     marginBottom: 16,
   },
   historyCard: {
-    backgroundColor: '#1e293b',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -541,18 +526,15 @@ const styles = StyleSheet.create({
   },
   historyDateText: {
     fontSize: 14,
-    color: '#94a3b8',
     fontWeight: '500',
   },
   latestBadge: {
-    backgroundColor: 'rgba(139, 92, 246, 0.2)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
   },
   latestBadgeText: {
     fontSize: 10,
-    color: '#8b5cf6',
     fontWeight: '600',
   },
   historyData: {
@@ -565,19 +547,16 @@ const styles = StyleSheet.create({
   },
   historyDataLabel: {
     fontSize: 12,
-    color: '#94a3b8',
     marginBottom: 4,
   },
   historyDataValue: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
   },
   showMoreButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1e293b',
     padding: 16,
     borderRadius: 12,
     marginTop: 8,
@@ -585,7 +564,6 @@ const styles = StyleSheet.create({
   },
   showMoreText: {
     fontSize: 14,
-    color: '#8b5cf6',
     fontWeight: '600',
   },
   photosSection: {
@@ -593,7 +571,6 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   photosPlaceholder: {
-    backgroundColor: '#1e293b',
     padding: 40,
     borderRadius: 12,
     alignItems: 'center',
@@ -601,12 +578,10 @@ const styles = StyleSheet.create({
   photosPlaceholderText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
     marginTop: 16,
   },
   photosPlaceholderSubtext: {
     fontSize: 14,
-    color: '#94a3b8',
     marginTop: 8,
     textAlign: 'center',
   },

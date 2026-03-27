@@ -2,17 +2,13 @@ const express = require('express');
 const router = express.Router();
 const physicalProfileController = require('../controllers/physical-profile.controller');
 const authMiddleware = require('../middleware/auth.middleware');
+const validate = require('../middleware/validate.middleware');
+const schemas = require('../validators/schemas');
 
-// Todas las rutas requieren autenticación
 router.use(authMiddleware);
 
-// Obtener todos los perfiles físicos del usuario
 router.get('/', physicalProfileController.getPhysicalProfiles);
-
-// Obtener último perfil físico
 router.get('/latest', physicalProfileController.getLatestProfile);
-
-// Crear nuevo perfil físico
-router.post('/', physicalProfileController.createPhysicalProfile);
+router.post('/', validate(schemas.createPhysicalProfile), physicalProfileController.createPhysicalProfile);
 
 module.exports = router;

@@ -1,9 +1,11 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import useAuthStore from '../../store/authStore';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function RegisterScreen({ navigation }) {
+  const { theme } = useTheme();
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
   const [email, setEmail] = useState('');
@@ -34,7 +36,7 @@ export default function RegisterScreen({ navigation }) {
       email,
       password,
     });
-    
+
     if (!result.success) {
       Alert.alert('Error', result.error);
     }
@@ -42,44 +44,44 @@ export default function RegisterScreen({ navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.bg }]}
     >
       <StatusBar style="light" />
-      
-      <ScrollView 
+
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Crear Cuenta</Text>
-          <Text style={styles.subtitle}>Comienza tu transformación</Text>
+          <Text style={[styles.title, { color: theme.primary }]}>Crear Cuenta</Text>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Comienza tu transformación</Text>
         </View>
 
         <View style={styles.form}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
             placeholder="Nombre *"
-            placeholderTextColor="#64748b"
+            placeholderTextColor={theme.textMuted}
             value={nombre}
             onChangeText={setNombre}
             editable={!isLoading}
           />
 
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
             placeholder="Apellido"
-            placeholderTextColor="#64748b"
+            placeholderTextColor={theme.textMuted}
             value={apellido}
             onChangeText={setApellido}
             editable={!isLoading}
           />
 
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
             placeholder="Email *"
-            placeholderTextColor="#64748b"
+            placeholderTextColor={theme.textMuted}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -88,9 +90,9 @@ export default function RegisterScreen({ navigation }) {
           />
 
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
             placeholder="Contraseña *"
-            placeholderTextColor="#64748b"
+            placeholderTextColor={theme.textMuted}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -98,17 +100,17 @@ export default function RegisterScreen({ navigation }) {
           />
 
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
             placeholder="Confirmar Contraseña *"
-            placeholderTextColor="#64748b"
+            placeholderTextColor={theme.textMuted}
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             secureTextEntry
             editable={!isLoading}
           />
 
-          <TouchableOpacity 
-            style={[styles.button, isLoading && styles.buttonDisabled]} 
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: theme.primary }, isLoading && styles.buttonDisabled]}
             onPress={handleRegister}
             disabled={isLoading}
           >
@@ -119,13 +121,13 @@ export default function RegisterScreen({ navigation }) {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.linkButton}
             onPress={() => navigation.goBack()}
             disabled={isLoading}
           >
-            <Text style={styles.linkText}>
-              ¿Ya tienes cuenta? <Text style={styles.linkTextBold}>Inicia Sesión</Text>
+            <Text style={[styles.linkText, { color: theme.textSecondary }]}>
+              ¿Ya tienes cuenta? <Text style={[styles.linkTextBold, { color: theme.primary }]}>Inicia Sesión</Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -137,7 +139,6 @@ export default function RegisterScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
   },
   scrollContent: {
     flexGrow: 1,
@@ -152,28 +153,22 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 36,
     fontWeight: 'bold',
-    color: '#a855f7',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#cbd5e1',
   },
   form: {
     width: '100%',
   },
   input: {
-    backgroundColor: '#1e293b',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     fontSize: 16,
-    color: '#fff',
     borderWidth: 1,
-    borderColor: '#334155',
   },
   button: {
-    backgroundColor: '#a855f7',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -192,11 +187,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   linkText: {
-    color: '#cbd5e1',
     fontSize: 14,
   },
   linkTextBold: {
-    color: '#a855f7',
     fontWeight: '600',
   },
 });
