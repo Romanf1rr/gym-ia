@@ -104,57 +104,86 @@ El JSON debe tener EXACTAMENTE esta estructura:
     }
   },
 
-  async generateNutritionPlan(userProfile, goals, restricciones) {
+  async generateNutritionPlan(userProfile, goals, extras = {}) {
     try {
-      const prompt = `Eres un nutricionista deportivo experto. Genera un plan nutricional semanal completo y personalizado en formato JSON.
+      const { restricciones, horaEntrenamiento, horaPrimerAlimento, tipoRutina } = extras;
+
+      // Calcular horarios de comidas en base al primer alimento y entrenamiento
+      const primerAlimento = horaPrimerAlimento || '7:00am';
+      const entrena = horaEntrenamiento || null;
+
+      // Estrategia de macros según objetivo
+      const estrategiaObjetivo = {
+        'ganar_musculo': 'VOLUMEN: superávit calórico +300-500 kcal. Proteínas altas (2-2.5g/kg). Carbos altos para energía y recuperación. Comida pre y post entrenamiento con carbos + proteína.',
+        'perder_grasa': 'DÉFICIT: déficit calórico -400-600 kcal. Proteínas altas (2-2.2g/kg) para preservar músculo. Carbos moderados, grasas saludables. Comida pre-entreno con carbos, post-entreno solo proteína.',
+        'mantener': 'MANTENIMIENTO: calorías de mantenimiento exactas. Balance equilibrado de macros. Proteínas moderadas-altas (1.6-2g/kg).',
+        'definicion': 'DEFINICIÓN: déficit moderado -300 kcal. Proteínas muy altas (2.2-2.5g/kg). Carbos cíclicos (más en días de entrenamiento, menos en descanso). Grasas saludables.',
+        'resistencia': 'RESISTENCIA: calorías mantenimiento o ligero superávit. Carbos muy altos (55-65% de calorías). Proteínas moderadas. Hidratación enfatizada.',
+      }[goals.objetivoPrincipal] || 'Balance equilibrado adaptado al objetivo.';
+
+      const prompt = `Eres un nutricionista deportivo experto. Genera un plan nutricional diario personalizado en formato JSON estricto.
 
 PERFIL DEL USUARIO:
-- Objetivo: ${goals.objetivoPrincipal}
+- Objetivo principal: ${goals.objetivoPrincipal}
+- Nivel de experiencia: ${goals.nivelExperiencia || 'intermedio'}
 - Nivel de actividad: ${goals.nivelActividad || 'moderado'}
-- Peso actual: ${userProfile.peso || 'no especificado'} kg
-- Altura: ${userProfile.altura || 'no especificada'} cm
+- Peso actual: ${userProfile.peso || 70} kg
+- Altura: ${userProfile.altura || 170} cm
+- Edad: ${userProfile.edad || 'no especificada'}
+- Sexo: ${userProfile.sexo || 'no especificado'}
 - Porcentaje de grasa: ${userProfile.porcentajeGrasa || 'no especificado'}%
+- Tipo de rutina activa: ${tipoRutina || 'entrenamiento de fuerza'}
+- Hora primer alimento: ${primerAlimento}
+- Hora de entrenamiento: ${entrena || 'no especificada'}
 - Restricciones/alergias/preferencias: ${restricciones || 'ninguna'}
 
-INSTRUCCIONES:
-- Calcula las calorías diarias exactas según el objetivo y perfil
-- Distribuye en 5 comidas: desayuno, media mañana, almuerzo, merienda, cena
-- Especifica cantidades/porciones en gramos para cada alimento
-- El plan debe ser variado, práctico y delicioso
-- Incluye opciones de sustitución cuando sea posible
+ESTRATEGIA NUTRICIONAL OBLIGATORIA:
+${estrategiaObjetivo}
 
-El JSON debe tener EXACTAMENTE esta estructura:
+INSTRUCCIONES CRÍTICAS:
+- SIEMPRE incluir exactamente 5 comidas: desayuno, media_manana, almuerzo, merienda, cena
+- Los horarios deben basarse en la hora del primer alimento (${primerAlimento}) y distribuirse cada 2.5-3 horas
+${entrena ? `- Si entrena a las ${entrena}: poner comida pre-entreno 1.5h antes (carbos+proteína) y post-entreno 30-45min después (proteína+carbos rápidos)` : ''}
+- Cada alimento debe incluir cantidad exacta en gramos o ml
+- Los macros de cada comida deben sumar exactamente los macros totales del día
+- La dieta debe ser coherente con el tipo de rutina activa
+- Nombres de comidas atractivos y descriptivos (no solo "Almuerzo")
+- Mínimo 4 alimentos por comida, con cantidades precisas
+
+El JSON debe tener EXACTAMENTE esta estructura (sin campos extra):
 {
-  "nombre": "string (nombre descriptivo del plan)",
-  "caloriasDiarias": number (entero, ej: 2200),
-  "proteinas": number (gramos, ej: 165),
-  "carbohidratos": number (gramos, ej: 275),
-  "grasas": number (gramos, ej: 73),
+  "nombre": "string (nombre descriptivo del plan, ej: Plan Volumen - Ganancia Muscular)",
+  "objetivo": "string (ganar_musculo|perder_grasa|mantener|definicion|resistencia)",
+  "caloriasDiarias": number (entero),
+  "proteinas": number (gramos, entero),
+  "carbohidratos": number (gramos, entero),
+  "grasas": number (gramos, entero),
+  "hidratacion": "string (ej: 3 litros de agua al día)",
   "comidas": [
     {
-      "tipo": "string (desayuno|media_manana|almuerzo|merienda|cena)",
-      "nombre": "string (nombre atractivo de la comida)",
-      "hora": "string (ej: 7:30am)",
-      "calorias": number,
-      "proteinas": number,
-      "carbohidratos": number,
-      "grasas": number,
-      "alimentos": [
-        "string (alimento + cantidad, ej: Avena 80g con leche descremada 200ml)",
-        "string",
-        "string"
-      ],
-      "notas": "string (tips de preparación o sustituciones, opcional)"
-    }
+      "tipo": "desayuno",
+      "nombre": "string (nombre atractivo)",
+      "hora": "string (ej: 7:00am)",
+      "calorias": number (entero),
+      "proteinas": number (entero),
+      "carbohidratos": number (entero),
+      "grasas": number (entero),
+      "alimentos": ["string (alimento + cantidad exacta)", "string", "string", "string"],
+      "notas": "string (tip breve de preparación o sustitución)"
+    },
+    { "tipo": "media_manana", ... },
+    { "tipo": "almuerzo", ... },
+    { "tipo": "merienda", ... },
+    { "tipo": "cena", ... }
   ],
-  "consejos": ["string array con 3 consejos nutricionales personalizados"]
+  "consejos": ["string", "string", "string"]
 }`;
 
       const response = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         response_format: { type: 'json_object' },
-        max_tokens: 3000
+        max_tokens: 4000,
       });
 
       return JSON.parse(response.choices[0].message.content);

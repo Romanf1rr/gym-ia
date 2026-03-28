@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { api } from '../../services/api/api.service';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -20,8 +20,62 @@ const RESTRICCIONES_OPCIONES = [
   { key: 'bajo_carbos', label: 'Bajo en carbos' },
 ];
 
+const HORAS = [
+  '5:00am','5:30am','6:00am','6:30am','7:00am','7:30am','8:00am','8:30am',
+  '9:00am','9:30am','10:00am','10:30am','11:00am','11:30am','12:00pm',
+  '12:30pm','1:00pm','1:30pm','2:00pm','2:30pm','3:00pm','3:30pm','4:00pm',
+  '4:30pm','5:00pm','5:30pm','6:00pm','6:30pm','7:00pm','7:30pm','8:00pm',
+  '8:30pm','9:00pm','9:30pm','10:00pm',
+];
+
+const MEAL_ICONS = {
+  desayuno: 'sunny-outline',
+  media_manana: 'cafe-outline',
+  almuerzo: 'restaurant-outline',
+  merienda: 'nutrition-outline',
+  cena: 'moon-outline',
+};
+
+const MEAL_LABELS = {
+  desayuno: 'Desayuno',
+  media_manana: 'Media Mañana',
+  almuerzo: 'Almuerzo',
+  merienda: 'Merienda',
+  cena: 'Cena',
+};
+
+function HourPicker({ label, value, onChange, theme }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <View style={{ marginBottom: 16 }}>
+      <Text style={{ fontSize: 14, fontWeight: '600', color: theme.text, marginBottom: 8 }}>{label}</Text>
+      <TouchableOpacity
+        style={{ backgroundColor: theme.card, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: theme.border, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+        onPress={() => setOpen(!open)}
+      >
+        <Text style={{ fontSize: 14, color: value ? theme.text : theme.textMuted }}>{value || 'Seleccionar hora...'}</Text>
+        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={16} color={theme.textMuted} />
+      </TouchableOpacity>
+      {open && (
+        <ScrollView style={{ maxHeight: 160, backgroundColor: theme.card, borderRadius: 12, borderWidth: 1, borderColor: theme.border, marginTop: 4 }} nestedScrollEnabled>
+          {HORAS.map(h => (
+            <TouchableOpacity
+              key={h}
+              style={{ padding: 12, borderBottomWidth: 1, borderColor: theme.border, backgroundColor: value === h ? theme.primary + '20' : 'transparent' }}
+              onPress={() => { onChange(h); setOpen(false); }}
+            >
+              <Text style={{ fontSize: 14, color: value === h ? theme.primary : theme.text, fontWeight: value === h ? '700' : '400' }}>{h}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+    </View>
+  );
+}
+
 export default function NutritionScreen() {
   const { theme } = useTheme();
+  const navigation = useNavigation();
   const [plan, setPlan] = useState(null);
   const [comidasHoy, setComidasHoy] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -29,12 +83,14 @@ export default function NutritionScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [usageInfo, setUsageInfo] = useState(null);
 
-  // Modal de preferencias
+  // Modal
   const [showModal, setShowModal] = useState(false);
-  const [alergias, setAlergias] = useState('');
   const [restriccionSeleccionada, setRestriccionSeleccionada] = useState('ninguna');
+  const [alergias, setAlergias] = useState('');
   const [gustos, setGustos] = useState('');
   const [noGustos, setNoGustos] = useState('');
+  const [horaPrimerAlimento, setHoraPrimerAlimento] = useState('7:00am');
+  const [horaEntrenamiento, setHoraEntrenamiento] = useState('');
 
   const loadData = async () => {
     try {
@@ -71,7 +127,11 @@ export default function NutritionScreen() {
     const restricciones = partes.join('. ') || null;
 
     try {
-      const res = await api.post('/nutrition/generate', { restricciones });
+      const res = await api.post('/nutrition/generate', {
+        restricciones,
+        horaPrimerAlimento,
+        horaEntrenamiento: horaEntrenamiento || null,
+      });
       setPlan(res.data);
       await loadData();
     } catch (err) {
@@ -79,10 +139,9 @@ export default function NutritionScreen() {
       Alert.alert(
         esLimite ? 'Límite alcanzado' : 'Error',
         err.response?.data?.message || 'Error al generar plan',
-        esLimite ? [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Ver Premium', onPress: () => {} },
-        ] : [{ text: 'OK' }]
+        esLimite
+          ? [{ text: 'Cancelar', style: 'cancel' }, { text: 'Ver Premium', onPress: () => {} }]
+          : [{ text: 'OK' }]
       );
     } finally {
       setGenerating(false);
@@ -101,20 +160,6 @@ export default function NutritionScreen() {
   const metaCalorias = plan?.caloriasDiarias || 2000;
   const progresoCalorias = Math.min((totalesHoy.calorias / metaCalorias) * 100, 100);
 
-  const COLORES_MACRO = {
-    proteinas: theme.primary,
-    carbohidratos: theme.orange,
-    grasas: theme.yellow,
-  };
-
-  const iconoComida = (tipo) => {
-    const iconos = {
-      desayuno: 'sunny-outline', media_manana: 'cafe-outline',
-      almuerzo: 'restaurant-outline', merienda: 'nutrition-outline', cena: 'moon-outline',
-    };
-    return iconos[tipo] || 'restaurant-outline';
-  };
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={['top']}>
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}>
@@ -122,15 +167,27 @@ export default function NutritionScreen() {
         {/* Header */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingBottom: 12 }}>
           <Text style={{ fontSize: 24, fontWeight: 'bold', color: theme.text }}>Nutrición</Text>
-          {plan && (
-            <TouchableOpacity
-              style={{ padding: 8, backgroundColor: theme.card, borderRadius: 10, borderWidth: 1, borderColor: theme.border }}
-              onPress={() => setShowModal(true)}
-              disabled={generating}
-            >
-              {generating ? <ActivityIndicator size="small" color={theme.primary} /> : <Ionicons name="refresh" size={18} color={theme.primary} />}
-            </TouchableOpacity>
-          )}
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {plan && (
+              <TouchableOpacity
+                style={{ padding: 8, backgroundColor: theme.card, borderRadius: 10, borderWidth: 1, borderColor: theme.border }}
+                onPress={() => navigation.navigate('NutritionPDF', { plan })}
+              >
+                <Ionicons name="document-text-outline" size={18} color={theme.primary} />
+              </TouchableOpacity>
+            )}
+            {plan && (
+              <TouchableOpacity
+                style={{ padding: 8, backgroundColor: theme.card, borderRadius: 10, borderWidth: 1, borderColor: theme.border }}
+                onPress={() => setShowModal(true)}
+                disabled={generating}
+              >
+                {generating
+                  ? <ActivityIndicator size="small" color={theme.primary} />
+                  : <Ionicons name="refresh" size={18} color={theme.primary} />}
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {!plan ? (
@@ -140,7 +197,7 @@ export default function NutritionScreen() {
               Sin plan nutricional
             </Text>
             <Text style={{ fontSize: 14, color: theme.textSecondary, textAlign: 'center', lineHeight: 22, marginBottom: 24 }}>
-              Generá tu plan personalizado con IA. Te preguntaremos sobre tus preferencias y alergias.
+              Generá tu plan personalizado con IA alineado a tu objetivo y rutina.
             </Text>
             {usageInfo?.plan === 'free' && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: theme.card, padding: 10, borderRadius: 8, marginBottom: 20, borderWidth: 1, borderColor: theme.border }}>
@@ -179,9 +236,9 @@ export default function NutritionScreen() {
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
                 {[
-                  { label: 'Proteínas', val: totalesHoy.proteinas, meta: plan.proteinas, color: COLORES_MACRO.proteinas },
-                  { label: 'Carbos', val: totalesHoy.carbohidratos, meta: plan.carbohidratos, color: COLORES_MACRO.carbohidratos },
-                  { label: 'Grasas', val: totalesHoy.grasas, meta: plan.grasas, color: COLORES_MACRO.grasas },
+                  { label: 'Proteínas', val: totalesHoy.proteinas, meta: plan.proteinas, color: theme.primary },
+                  { label: 'Carbos', val: totalesHoy.carbohidratos, meta: plan.carbohidratos, color: theme.orange },
+                  { label: 'Grasas', val: totalesHoy.grasas, meta: plan.grasas, color: theme.yellow },
                 ].map((m) => (
                   <View key={m.label} style={{ alignItems: 'center' }}>
                     <Text style={{ fontSize: 18, fontWeight: 'bold', color: m.color }}>{Math.round(m.val)}g</Text>
@@ -192,16 +249,26 @@ export default function NutritionScreen() {
               </View>
             </View>
 
+            {/* Nombre del plan */}
             {plan.nombre && (
               <View style={{ paddingHorizontal: 16, marginBottom: 4 }}>
                 <Text style={{ fontSize: 13, color: theme.textMuted, fontStyle: 'italic' }}>{plan.nombre}</Text>
               </View>
             )}
 
+            {/* Botón ver PDF */}
+            <TouchableOpacity
+              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginHorizontal: 16, marginBottom: 16, paddingVertical: 12, backgroundColor: theme.card, borderRadius: 12, borderWidth: 1, borderColor: theme.primary + '40' }}
+              onPress={() => navigation.navigate('NutritionPDF', { plan })}
+            >
+              <Ionicons name="document-text" size={18} color={theme.primary} />
+              <Text style={{ fontSize: 14, fontWeight: '700', color: theme.primary }}>Ver plan completo en PDF</Text>
+            </TouchableOpacity>
+
             {/* Comidas del plan */}
             {Array.isArray(plan.comidas) && plan.comidas.length > 0 && (
               <View style={{ paddingHorizontal: 16, marginBottom: 24 }}>
-                <Text style={{ fontSize: 18, fontWeight: 'bold', color: theme.text, marginBottom: 14, marginTop: 8 }}>
+                <Text style={{ fontSize: 18, fontWeight: 'bold', color: theme.text, marginBottom: 14, marginTop: 4 }}>
                   Plan de comidas
                 </Text>
                 {plan.comidas.map((comida, i) => (
@@ -209,10 +276,12 @@ export default function NutritionScreen() {
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: theme.primary + '20', justifyContent: 'center', alignItems: 'center' }}>
-                          <Ionicons name={iconoComida(comida.tipo)} size={16} color={theme.primary} />
+                          <Ionicons name={MEAL_ICONS[comida.tipo] || 'restaurant-outline'} size={16} color={theme.primary} />
                         </View>
                         <View>
-                          <Text style={{ fontSize: 15, fontWeight: '700', color: theme.text }}>{comida.nombre || comida.tipo}</Text>
+                          <Text style={{ fontSize: 15, fontWeight: '700', color: theme.text }}>
+                            {MEAL_LABELS[comida.tipo] || comida.nombre || comida.tipo}
+                          </Text>
                           {comida.hora && <Text style={{ fontSize: 11, color: theme.textMuted }}>{comida.hora}</Text>}
                         </View>
                       </View>
@@ -278,10 +347,10 @@ export default function NutritionScreen() {
         )}
       </ScrollView>
 
-      {/* Modal de preferencias antes de generar */}
+      {/* Modal de preferencias */}
       <Modal visible={showModal} animationType="slide" transparent>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
-          <View style={{ backgroundColor: theme.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '88%' }}>
+          <View style={{ backgroundColor: theme.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '92%' }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <Text style={{ fontSize: 20, fontWeight: 'bold', color: theme.text }}>Personalizar plan</Text>
               <TouchableOpacity onPress={() => setShowModal(false)}>
@@ -290,6 +359,18 @@ export default function NutritionScreen() {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
+
+              {/* Horarios */}
+              <View style={{ backgroundColor: theme.card, borderRadius: 14, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: theme.border }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 }}>
+                  <Ionicons name="time-outline" size={16} color={theme.primary} />
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text }}>Horarios</Text>
+                </View>
+                <HourPicker label="¿A qué hora es tu primer alimento?" value={horaPrimerAlimento} onChange={setHoraPrimerAlimento} theme={theme} />
+                <HourPicker label="¿A qué hora entrenás? (opcional)" value={horaEntrenamiento} onChange={setHoraEntrenamiento} theme={theme} />
+              </View>
+
+              {/* Tipo de dieta */}
               <Text style={{ fontSize: 14, fontWeight: '600', color: theme.text, marginBottom: 10 }}>Tipo de dieta</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
                 {RESTRICCIONES_OPCIONES.map((op) => (

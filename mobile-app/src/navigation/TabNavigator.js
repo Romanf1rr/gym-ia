@@ -22,6 +22,7 @@ import AdminDashboardScreen from '../screens/mobile/admin/AdminDashboardScreen';
 import AdminUsersScreen from '../screens/mobile/admin/AdminUsersScreen';
 import AdminModerationScreen from '../screens/mobile/admin/AdminModerationScreen';
 import MiAppHomeScreen from '../screens/mobile/admin/MiAppHomeScreen';
+import NutritionPDFScreen from '../screens/mobile/NutritionPDFScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -97,6 +98,7 @@ function MiAppStack() {
       <Stack.Screen name="MiDashboard" component={DashboardScreen} options={{ title: 'Inicio' }} />
       <Stack.Screen name="Rutinas" component={RoutinesScreen} options={{ title: 'Rutinas' }} />
       <Stack.Screen name="Nutrición" component={NutritionScreen} options={{ title: 'Nutrición' }} />
+      <Stack.Screen name="NutritionPDF" component={NutritionPDFScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat IA' }} />
       <Stack.Screen name="Perfil" component={ProfileScreen} options={{ title: 'Mi Perfil' }} />
       <Stack.Screen name="PhysicalProfile" component={PhysicalProfileScreen} options={{ title: 'Perfil Físico' }} />
@@ -111,6 +113,16 @@ function ProgressStack() {
   return (
     <Stack.Navigator screenOptions={stackOptions}>
       <Stack.Screen name="ProgressMain" component={ProgressScreen} options={{ headerShown: false }} />
+    </Stack.Navigator>
+  );
+}
+
+function NutritionStack() {
+  const stackOptions = useStackOptions();
+  return (
+    <Stack.Navigator screenOptions={stackOptions}>
+      <Stack.Screen name="NutritionMain" component={NutritionScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="NutritionPDF" component={NutritionPDFScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
@@ -134,7 +146,7 @@ function ClientTabs() {
       <Tab.Screen name="Inicio" component={DashboardStack} />
       <Tab.Screen name="Rutinas" component={RoutinesScreen} />
       <Tab.Screen name="Progreso" component={ProgressStack} />
-      <Tab.Screen name="Nutrición" component={NutritionScreen} />
+      <Tab.Screen name="Nutrición" component={NutritionStack} />
       <Tab.Screen name="Perfil" component={ProfileStack} />
     </Tab.Navigator>
   );

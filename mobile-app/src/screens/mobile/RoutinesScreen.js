@@ -10,7 +10,12 @@ import Body from 'react-native-body-highlighter';
 import { api } from '../../services/api/api.service';
 
 const API_BASE = (process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.65:3000/api/v1').replace('/api/v1', '');
-const gifUrl = (exerciseId) => exerciseId ? `${API_BASE}/api/v1/routines/gif/${exerciseId}` : null;
+// Si gifUrl ya es una URL completa (Supabase) la usamos directo; si es un ID usamos el proxy
+const gifUrl = (value) => {
+  if (!value) return null;
+  if (value.startsWith('http')) return value;
+  return `${API_BASE}/api/v1/routines/gif/${value}`;
+};
 import { useTheme } from '../../context/ThemeContext';
 
 const { width } = Dimensions.get('window');

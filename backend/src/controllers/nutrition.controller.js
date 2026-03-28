@@ -5,11 +5,12 @@ const aiService = require('../services/ai/openai.service');
 const generateNutritionPlan = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { restricciones } = req.body;
+    const { restricciones, horaEntrenamiento, horaPrimerAlimento } = req.body;
 
-    const [perfilFisico, objetivo] = await Promise.all([
+    const [perfilFisico, objetivo, rutinaActiva] = await Promise.all([
       prisma.perfilFisico.findFirst({ where: { userId }, orderBy: { createdAt: 'desc' } }),
       prisma.objetivo.findFirst({ where: { userId, activo: true }, orderBy: { createdAt: 'desc' } }),
+      prisma.rutina.findFirst({ where: { userId, activa: true }, select: { nombre: true } }),
     ]);
 
     if (!objetivo) {
@@ -18,11 +19,14 @@ const generateNutritionPlan = async (req, res) => {
       });
     }
 
-    const planIA = await aiService.generateNutritionPlan(
-      perfilFisico || {},
-      objetivo,
-      restricciones || null
-    );
+    const extras = {
+      restricciones: restricciones || null,
+      horaEntrenamiento: horaEntrenamiento || null,
+      horaPrimerAlimento: horaPrimerAlimento || null,
+      tipoRutina: rutinaActiva?.nombre || null,
+    };
+
+    const planIA = await aiService.generateNutritionPlan(perfilFisico || {}, objetivo, extras);
 
     // Desactivar plan anterior
     await prisma.planNutricional.updateMany({
@@ -35,9 +39,9 @@ const generateNutritionPlan = async (req, res) => {
         userId,
         nombre: planIA.nombre || 'Plan nutricional personalizado',
         caloriasDiarias: parseInt(planIA.caloriasDiarias) || 2000,
-        proteinas: planIA.proteinas || 0,
-        carbohidratos: planIA.carbohidratos || 0,
-        grasas: planIA.grasas || 0,
+        proteinas: parseInt(planIA.proteinas) || 0,
+        carbohidratos: parseInt(planIA.carbohidratos) || 0,
+        grasas: parseInt(planIA.grasas) || 0,
         comidas: planIA.comidas || [],
         restricciones: restricciones || null,
         generadoPorIA: true,

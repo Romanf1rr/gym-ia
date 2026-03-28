@@ -18,6 +18,8 @@
     "expo": "~54.0.12",
     "expo-av": "~16.0.8",
     "expo-camera": "~17.0.10",
+    "expo-print": "~15.0.8",
+    "expo-screen-capture": "~8.0.9",
     "expo-status-bar": "~3.0.8",
     "nativewind": "^4.2.1",
     "react": "19.1.0",
