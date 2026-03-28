@@ -19,8 +19,12 @@ const generateRoutine = async (req, res) => {
       });
     }
 
+    // Extraer preferencias adicionales del body
+    const { lugar, zonasPrioritarias, lesiones, duracionSesion } = req.body;
+    const extras = { lugar, zonasPrioritarias, lesiones, duracionSesion };
+
     // Generar rutina con GPT-4o
-    const rutinaIA = await aiService.generateRoutine(perfilFisico || {}, objetivo);
+    const rutinaIA = await aiService.generateRoutine(perfilFisico || {}, objetivo, extras);
 
     // Enriquecer ejercicios con ExerciseDB (gifUrl + músculos)
     const rutinaEnriquecida = await exerciseDBService.enrichRoutine(rutinaIA);
@@ -49,7 +53,36 @@ const generateRoutine = async (req, res) => {
     res.status(201).json(rutina);
   } catch (error) {
     console.error('Error generando rutina:', error);
-    res.status(500).json({ message: 'Error al generar rutina con IA' });
+    res.status(500).json({ message: error.message || 'Error al generar rutina con IA' });
+  }
+};
+
+// Re-enriquece ejercicios con gifUrl null en background y actualiza la DB
+const reEnrichMissingGifs = async (rutinaId, ejercicios) => {
+  try {
+    let changed = false;
+    const diasActualizados = await Promise.all(
+      ejercicios.map(async (dia) => {
+        const ejerciciosActualizados = await Promise.all(
+          dia.ejercicios.map(async (ejercicio) => {
+            if (ejercicio.gifUrl) return ejercicio;
+            const data = await exerciseDBService.enrichExercise(ejercicio.nombreEn || ejercicio.nombre);
+            if (data?.gifUrl) {
+              changed = true;
+              return { ...ejercicio, gifUrl: data.gifUrl };
+            }
+            return ejercicio;
+          })
+        );
+        return { ...dia, ejercicios: ejerciciosActualizados };
+      })
+    );
+    if (changed) {
+      await prisma.rutina.update({ where: { id: rutinaId }, data: { ejercicios: diasActualizados } });
+      console.log(`[Rutina] Re-enriquecida rutina ${rutinaId}`);
+    }
+  } catch (e) {
+    console.error('[Rutina] Error re-enriching:', e.message);
   }
 };
 
@@ -68,6 +101,14 @@ const getActiveRoutine = async (req, res) => {
     }
 
     res.json(rutina);
+
+    // Re-enriquecer en background si hay ejercicios sin GIF
+    const tieneNulos = rutina.ejercicios?.some(dia =>
+      dia.ejercicios?.some(e => !e.gifUrl)
+    );
+    if (tieneNulos) {
+      reEnrichMissingGifs(rutina.id, rutina.ejercicios);
+    }
   } catch (error) {
     console.error('Error obteniendo rutina activa:', error);
     res.status(500).json({ message: 'Error al obtener rutina' });
@@ -123,6 +164,62 @@ const getRoutineById = async (req, res) => {
   }
 };
 
+// Activar una rutina guardada
+const activateRoutine = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { id } = req.params;
+
+    const rutina = await prisma.rutina.findFirst({ where: { id, userId } });
+    if (!rutina) return res.status(404).json({ message: 'Rutina no encontrada' });
+
+    await prisma.rutina.updateMany({ where: { userId, activa: true }, data: { activa: false } });
+    const updated = await prisma.rutina.update({ where: { id }, data: { activa: true } });
+
+    res.json(updated);
+  } catch (error) {
+    console.error('Error activando rutina:', error);
+    res.status(500).json({ message: 'Error al activar rutina' });
+  }
+};
+
+// Renombrar una rutina
+const renameRoutine = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { id } = req.params;
+    const { nombre } = req.body;
+
+    if (!nombre?.trim()) return res.status(400).json({ message: 'El nombre es requerido' });
+
+    const rutina = await prisma.rutina.findFirst({ where: { id, userId } });
+    if (!rutina) return res.status(404).json({ message: 'Rutina no encontrada' });
+
+    const updated = await prisma.rutina.update({ where: { id }, data: { nombre: nombre.trim() } });
+    res.json(updated);
+  } catch (error) {
+    console.error('Error renombrando rutina:', error);
+    res.status(500).json({ message: 'Error al renombrar rutina' });
+  }
+};
+
+// Eliminar una rutina
+const deleteRoutine = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { id } = req.params;
+
+    const rutina = await prisma.rutina.findFirst({ where: { id, userId } });
+    if (!rutina) return res.status(404).json({ message: 'Rutina no encontrada' });
+
+    await prisma.rutina.delete({ where: { id } });
+    res.json({ message: 'Rutina eliminada' });
+  } catch (error) {
+    console.error('Error eliminando rutina:', error);
+    res.status(500).json({ message: 'Error al eliminar rutina' });
+  }
+};
+
 // Registrar entrenamiento completado
 const logWorkout = async (req, res) => {
   try {
@@ -152,5 +249,8 @@ module.exports = {
   getActiveRoutine,
   getRoutines,
   getRoutineById,
+  activateRoutine,
+  renameRoutine,
+  deleteRoutine,
   logWorkout,
 };

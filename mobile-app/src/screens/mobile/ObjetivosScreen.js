@@ -156,9 +156,21 @@ export default function ObjetivosScreen({ navigation }) {
         pesoObjetivo: pesoObjetivo || null,
         limitaciones: limitaciones || null,
       });
-      Alert.alert('¡Guardado!', 'Tus objetivos han sido actualizados', [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
+      Alert.alert(
+        '¡Guardado!',
+        'Tus objetivos han sido actualizados. ¿Querés regenerar tu rutina con los nuevos objetivos?',
+        [
+          { text: 'Ahora no', style: 'cancel', onPress: () => navigation.goBack() },
+          {
+            text: 'Regenerar rutina',
+            onPress: () => {
+              navigation.goBack();
+              // Pequeño delay para que la navegación termine antes de abrir el modal
+              setTimeout(() => navigation.navigate('Rutinas', { abrirModal: true }), 300);
+            },
+          },
+        ]
+      );
     } catch (error) {
       Alert.alert('Error', 'No se pudo guardar el objetivo. Intenta de nuevo.');
     } finally {

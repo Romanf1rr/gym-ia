@@ -106,6 +106,15 @@ function MiAppStack() {
   );
 }
 
+function ProgressStack() {
+  const stackOptions = useStackOptions();
+  return (
+    <Stack.Navigator screenOptions={stackOptions}>
+      <Stack.Screen name="ProgressMain" component={ProgressScreen} options={{ headerShown: false }} />
+    </Stack.Navigator>
+  );
+}
+
 function ClientTabs() {
   const tabBarStyle = useTabBarStyle();
   return (
@@ -115,7 +124,7 @@ function ClientTabs() {
         const icons = {
           Inicio: focused ? 'home' : 'home-outline',
           Rutinas: focused ? 'barbell' : 'barbell-outline',
-          Chat: focused ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline',
+          Progreso: focused ? 'trending-up' : 'trending-up-outline',
           Nutrición: focused ? 'restaurant' : 'restaurant-outline',
           Perfil: focused ? 'person' : 'person-outline',
         };
@@ -124,7 +133,7 @@ function ClientTabs() {
     })}>
       <Tab.Screen name="Inicio" component={DashboardStack} />
       <Tab.Screen name="Rutinas" component={RoutinesScreen} />
-      <Tab.Screen name="Chat" component={ChatScreen} />
+      <Tab.Screen name="Progreso" component={ProgressStack} />
       <Tab.Screen name="Nutrición" component={NutritionScreen} />
       <Tab.Screen name="Perfil" component={ProfileStack} />
     </Tab.Navigator>

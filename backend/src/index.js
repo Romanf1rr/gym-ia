@@ -38,27 +38,32 @@ app.use('/api/v1/photos', require('./routes/photo.routes'));
 app.use('/api/v1/routines', require('./routes/routine.routes'));
 app.use('/api/v1/nutrition', require('./routes/nutrition.routes'));
 app.use('/api/v1/chat', require('./routes/chat.routes'));
+app.use('/api/v1/admin', require('./routes/admin.routes'));
+app.use('/api/v1/objectives', require('./routes/objetivo.routes'));
 
-// Error handling
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: 'Ruta no encontrada' });
+});
+
+// Error handler global (siempre al final, 4 parámetros)
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(err.status || 500).json({
     error: {
-      message: err.message || 'Internal Server Error',
-      status: err.status || 500
+      message: err.message || 'Error interno del servidor',
+      status: err.status || 500,
+      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
     }
   });
-});
-
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log('Server running on port ' + PORT);
   console.log('Environment: ' + process.env.NODE_ENV);
+  console.log('ExerciseDB key:', process.env.EXERCISEDB_API_KEY ? '✓ CARGADA (' + process.env.EXERCISEDB_API_KEY.substring(0, 8) + '...)' : '✗ NO ENCONTRADA');
+  console.log('OpenAI key:', process.env.OPENAI_API_KEY ? '✓ CARGADA' : '✗ NO ENCONTRADA');
 });
 
 module.exports = app;

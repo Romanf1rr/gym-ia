@@ -34,17 +34,32 @@ const aiService = {
     }
   },
 
-  async generateRoutine(userProfile, goals) {
+  async generateRoutine(userProfile, goals, extras = {}) {
     try {
-      const prompt = `Genera una rutina de entrenamiento personalizada en formato JSON para:
-- Objetivo: ${goals.objetivoPrincipal}
-- Nivel: ${goals.nivelExperiencia}
-- Dias por semana: ${goals.diasSemana}
-- Limitaciones: ${goals.limitaciones || 'ninguna'}
+      const prompt = `Eres un entrenador personal experto. Genera una rutina de entrenamiento personalizada en formato JSON.
+
+PERFIL DEL USUARIO:
+- Objetivo principal: ${goals.objetivoPrincipal}
+- Nivel de experiencia: ${goals.nivelExperiencia}
+- Días por semana: ${goals.diasSemana}
+- Limitaciones médicas: ${goals.limitaciones || 'ninguna'}
 - Peso: ${userProfile.peso || 'no especificado'} kg
 - Altura: ${userProfile.altura || 'no especificada'} cm
 
-MUSCULOS VALIDOS para los campos musculos y musculosSecundarios (usar exactamente estos nombres):
+PREFERENCIAS ADICIONALES:
+- Lugar de entrenamiento: ${extras.lugar || 'gym completo'}
+- Zonas a priorizar: ${extras.zonasPrioritarias || 'todo el cuerpo'}
+- Lesiones o restricciones: ${extras.lesiones || 'ninguna'}
+- Duración por sesión: ${extras.duracionSesion || '60 minutos'}
+
+INSTRUCCIONES CRÍTICAS:
+- Cada día debe tener EXACTAMENTE entre 5 y 7 ejercicios (nunca menos de 5)
+- Distribuye los grupos musculares de forma equilibrada durante la semana
+- Adapta el volumen y la intensidad al nivel del usuario
+- Incluye ejercicios compuestos (multi-articulares) y de aislamiento
+- Para cada ejercicio incluye "nombreEn" con el nombre exacto en inglés tal como aparece en ExerciseDB. Usa nombres simples y comunes: "barbell squat", "deadlift", "bench press", "pull-up", "push-up", "military press", "bent over row", "lat pulldown", "leg press", "dumbbell curl", "tricep pushdown", "plank", "crunch", "leg extension", "leg curl", "calf raise", "dumbbell lateral raise", "dumbbell fly", "romanian deadlift", "hip thrust", "cable row"
+
+MÚSCULOS VÁLIDOS (usar EXACTAMENTE estos nombres en los arrays):
 pectorals, biceps, triceps, abs, quadriceps, hamstrings, glutes, lats, traps, shoulders, calves, forearms, adductors, obliques
 
 El JSON debe tener EXACTAMENTE esta estructura:
@@ -56,16 +71,19 @@ El JSON debe tener EXACTAMENTE esta estructura:
   "ejercicios": [
     {
       "dia": number,
-      "nombreDia": "string (ej: Lunes - Pecho y Triceps)",
+      "nombreDia": "string (ej: Lunes - Pecho y Tríceps)",
       "ejercicios": [
         {
-          "nombre": "string",
+          "nombre": "string (nombre del ejercicio en español)",
+          "nombreEn": "string (nombre estándar en inglés, ej: bench press)",
           "series": number,
           "repeticiones": "string (ej: 8-12)",
           "descanso": "string (ej: 60 segundos)",
-          "notas": "string",
-          "musculos": ["string array con músculos principales de la lista válida"],
-          "musculosSecundarios": ["string array con músculos secundarios de la lista válida"]
+          "equipamiento": "string (ej: barra, mancuernas, máquina, peso corporal)",
+          "instrucciones": "string (cómo ejecutar el ejercicio en 1 oración corta)",
+          "notas": "string (1 tip breve)",
+          "musculos": ["array con músculos principales de la lista válida"],
+          "musculosSecundarios": ["array con músculos secundarios de la lista válida"]
         }
       ]
     }
@@ -76,7 +94,7 @@ El JSON debe tener EXACTAMENTE esta estructura:
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         response_format: { type: 'json_object' },
-        max_tokens: 3000
+        max_tokens: 6000
       });
 
       return JSON.parse(response.choices[0].message.content);

@@ -170,6 +170,19 @@ model RegistroComida {
   @@map("registros_comida")
 }
 
+model EjercicioCache {
+  id                  String   @id @default(uuid())
+  nombre              String   @unique
+  gifUrl              String?  @map("gif_url")
+  musculos            Json
+  musculosSecundarios Json     @map("musculos_secundarios")
+  equipamiento        String?
+  bodyPart            String?  @map("body_part")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  @@map("ejercicios_cache")
+}
+
 model MensajeChat {
   id        String   @id @default(uuid())
   userId    String   @map("user_id")
