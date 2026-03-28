@@ -2,15 +2,51 @@ const prisma = require('../utils/prisma');
 const aiService = require('../services/ai/openai.service');
 const exerciseDBService = require('../services/exercisedb.service');
 
+// Obtiene lista de ejercicios del cache agrupados por bodyPart (máx 40 por grupo)
+const getEjerciciosParaPrompt = async () => {
+  const GRUPOS = {
+    chest:       'Pecho',
+    back:        'Espalda',
+    'upper arms':'Brazos (bíceps y tríceps)',
+    shoulders:   'Hombros',
+    'upper legs':'Piernas (cuádriceps, isquiotibiales, glúteos)',
+    'lower legs':'Pantorrillas',
+    waist:       'Abdomen y cintura',
+    'lower arms':'Antebrazos',
+    cardio:      'Cardio',
+  };
+
+  const ejercicios = await prisma.ejercicioCache.findMany({
+    where: {
+      gifUrl: { startsWith: 'https://' },
+      bodyPart: { in: Object.keys(GRUPOS) },
+    },
+    select: { nombre: true, bodyPart: true },
+    orderBy: { nombre: 'asc' },
+  });
+
+  const porGrupo = {};
+  ejercicios.forEach(e => {
+    if (!porGrupo[e.bodyPart]) porGrupo[e.bodyPart] = [];
+    if (porGrupo[e.bodyPart].length < 40) porGrupo[e.bodyPart].push(e.nombre);
+  });
+
+  return Object.entries(GRUPOS)
+    .filter(([bp]) => porGrupo[bp]?.length)
+    .map(([bp, label]) => `${label}: ${porGrupo[bp].join(', ')}`)
+    .join('\n');
+};
+
 // Generar rutina con IA
 const generateRoutine = async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    // Obtener perfil físico y objetivo del usuario
-    const [perfilFisico, objetivo] = await Promise.all([
+    // Obtener perfil físico, objetivo y lista de ejercicios disponibles
+    const [perfilFisico, objetivo, listaEjercicios] = await Promise.all([
       prisma.perfilFisico.findFirst({ where: { userId }, orderBy: { createdAt: 'desc' } }),
       prisma.objetivo.findFirst({ where: { userId, activo: true }, orderBy: { createdAt: 'desc' } }),
+      getEjerciciosParaPrompt(),
     ]);
 
     if (!objetivo) {
@@ -21,7 +57,7 @@ const generateRoutine = async (req, res) => {
 
     // Extraer preferencias adicionales del body
     const { lugar, zonasPrioritarias, lesiones, duracionSesion } = req.body;
-    const extras = { lugar, zonasPrioritarias, lesiones, duracionSesion };
+    const extras = { lugar, zonasPrioritarias, lesiones, duracionSesion, listaEjercicios };
 
     // Generar rutina con GPT-4o
     const rutinaIA = await aiService.generateRoutine(perfilFisico || {}, objetivo, extras);

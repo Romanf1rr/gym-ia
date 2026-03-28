@@ -52,12 +52,16 @@ PREFERENCIAS ADICIONALES:
 - Lesiones o restricciones: ${extras.lesiones || 'ninguna'}
 - Duración por sesión: ${extras.duracionSesion || '60 minutos'}
 
+EJERCICIOS DISPONIBLES — USA EXACTAMENTE ESTOS NOMBRES EN "nombreEn":
+${extras.listaEjercicios || 'bench press, squat, deadlift, pull-up, push-up, plank'}
+
 INSTRUCCIONES CRÍTICAS:
 - Cada día debe tener EXACTAMENTE entre 5 y 7 ejercicios (nunca menos de 5)
+- El campo "nombreEn" DEBE ser uno de los nombres de la lista de arriba, copiado exactamente
+- NO inventes nombres en inglés — solo usa los de la lista
 - Distribuye los grupos musculares de forma equilibrada durante la semana
 - Adapta el volumen y la intensidad al nivel del usuario
 - Incluye ejercicios compuestos (multi-articulares) y de aislamiento
-- Para cada ejercicio incluye "nombreEn" con el nombre exacto en inglés tal como aparece en ExerciseDB. Usa nombres simples y comunes: "barbell squat", "deadlift", "bench press", "pull-up", "push-up", "military press", "bent over row", "lat pulldown", "leg press", "dumbbell curl", "tricep pushdown", "plank", "crunch", "leg extension", "leg curl", "calf raise", "dumbbell lateral raise", "dumbbell fly", "romanian deadlift", "hip thrust", "cable row"
 
 MÚSCULOS VÁLIDOS (usar EXACTAMENTE estos nombres en los arrays):
 pectorals, biceps, triceps, abs, quadriceps, hamstrings, glutes, lats, traps, shoulders, calves, forearms, adductors, obliques
