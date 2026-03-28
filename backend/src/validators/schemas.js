@@ -79,7 +79,9 @@ const schemas = {
 
   // Nutrición
   generateNutrition: Joi.object({
-    restricciones: Joi.string().max(300).optional().allow(null, '')
+    restricciones: Joi.string().max(300).optional().allow(null, ''),
+    horaEntrenamiento: Joi.string().max(20).optional().allow(null, ''),
+    horaPrimerAlimento: Joi.string().max(20).optional().allow(null, ''),
   }),
 
   logMeal: Joi.object({
