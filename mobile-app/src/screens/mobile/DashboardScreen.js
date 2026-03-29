@@ -211,7 +211,7 @@ export default function DashboardScreen({ navigation }) {
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
             {[
               { icon: 'restaurant-outline', label: 'Mi dieta', color: theme.orange, dest: 'Nutrición' },
-              { icon: 'trending-up-outline', label: 'Mi progreso', color: theme.primaryLight, dest: 'Progreso' },
+              { icon: 'trending-up-outline', label: 'Mi progreso', color: theme.primaryLight, dest: 'Progress' },
               { icon: 'flag-outline', label: 'Objetivos', color: theme.primary, dest: 'Objetivos' },
               { icon: 'chatbubble-ellipses-outline', label: 'Hablar con Chris', color: '#7C3AED', dest: 'Chat' },
             ].map(item => (

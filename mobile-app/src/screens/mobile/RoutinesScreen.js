@@ -237,6 +237,16 @@ export default function RoutinesScreen({ route, navigation }) {
     ]);
   };
 
+  // useMemo must be before any early returns (Rules of Hooks)
+  const musculosHoy = useMemo(() => {
+    const dias = rutina?.ejercicios || [];
+    const ejercicios = (dias[diaSeleccionado] || {}).ejercicios || [];
+    return [
+      ...mapMuscles(ejercicios.flatMap((e) => e.musculos || []), 2),
+      ...mapMuscles(ejercicios.flatMap((e) => e.musculosSecundarios || []), 1),
+    ];
+  }, [diaSeleccionado, rutina?.id]);
+
   if (loading) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg, justifyContent: 'center', alignItems: 'center' }}>
@@ -303,11 +313,6 @@ export default function RoutinesScreen({ route, navigation }) {
   const dias = rutina.ejercicios || [];
   const diaActual = dias[diaSeleccionado] || {};
   const ejerciciosHoy = diaActual.ejercicios || [];
-
-  const musculosHoy = useMemo(() => [
-    ...mapMuscles(ejerciciosHoy.flatMap((e) => e.musculos || []), 2),
-    ...mapMuscles(ejerciciosHoy.flatMap((e) => e.musculosSecundarios || []), 1),
-  ], [diaSeleccionado, rutina?.id]);
 
   // Banner: rutina desactualizada respecto al objetivo
   const rutinaDesactualizada = rutina && objetivo &&
