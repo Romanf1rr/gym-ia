@@ -58,12 +58,15 @@ app.use((err, req, res, next) => {
   });
 });
 
+const { initScheduler } = require('./services/scheduler.service');
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log('Server running on port ' + PORT);
   console.log('Environment: ' + process.env.NODE_ENV);
   console.log('ExerciseDB key:', process.env.EXERCISEDB_API_KEY ? '✓ CARGADA (' + process.env.EXERCISEDB_API_KEY.substring(0, 8) + '...)' : '✗ NO ENCONTRADA');
   console.log('OpenAI key:', process.env.OPENAI_API_KEY ? '✓ CARGADA' : '✗ NO ENCONTRADA');
+  initScheduler();
 });
 
 module.exports = app;

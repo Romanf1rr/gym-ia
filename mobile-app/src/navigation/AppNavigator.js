@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View } from 'react-native';
@@ -8,15 +8,34 @@ import AuthNavigator from './AuthNavigator';
 import TabNavigator from './TabNavigator';
 import PremiumScreen from '../screens/mobile/PremiumScreen';
 import OnboardingScreen from '../screens/mobile/OnboardingScreen';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
   const { isAuthenticated, isLoading, restoreSession, user } = useAuthStore();
+  const navigationRef = useRef(null);
 
   useEffect(() => {
     restoreSession();
   }, []);
+
+  // Register push token and handle notification taps once authenticated
+  usePushNotifications(
+    isAuthenticated
+      ? (screen) => {
+          if (navigationRef.current) {
+            const map = {
+              Rutinas: 'Rutinas',
+              Inicio: 'Inicio',
+              Chat: 'Chat',
+              Nutrición: 'Nutrición',
+            };
+            try { navigationRef.current.navigate(map[screen] || 'Inicio'); } catch {}
+          }
+        }
+      : null
+  );
 
   if (isLoading) {
     return (
@@ -29,7 +48,7 @@ export default function AppNavigator() {
   const needsOnboarding = isAuthenticated && user && !user.onboardingCompleted;
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
           <Stack.Screen name="Auth" component={AuthNavigator} />

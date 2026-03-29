@@ -73,6 +73,19 @@ const userController = {
     }
   },
 
+  async registerPushToken(req, res) {
+    try {
+      const userId = req.user.userId;
+      const { token } = req.body;
+      if (!token) return res.status(400).json({ message: 'token requerido' });
+      await prisma.user.update({ where: { id: userId }, data: { pushToken: token } });
+      res.json({ ok: true });
+    } catch (error) {
+      console.error('Error en registerPushToken:', error);
+      res.status(500).json({ message: 'Error al registrar token', error: error.message });
+    }
+  },
+
   async completeOnboarding(req, res) {
     try {
       const userId = req.user.userId;
