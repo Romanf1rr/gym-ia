@@ -645,7 +645,8 @@ export default function RoutinesScreen({ route, navigation }) {
         {musculosHoy.length > 0 && (
           <View style={{ paddingHorizontal: 20, marginBottom: 8 }}>
             <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.text, marginBottom: 12 }}>Músculos del día</Text>
-            <View style={{ backgroundColor: theme.card, borderRadius: 16, paddingVertical: 12, borderWidth: 1, borderColor: theme.border, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' }}>
+            <View style={{ backgroundColor: theme.card, borderRadius: 16, paddingVertical: 12, paddingBottom: 8, borderWidth: 1, borderColor: theme.border }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' }}>
               {/* Vista frontal — solo si hay músculos frontales */}
               {musculosFront.length > 0 && (
                 <View style={{ alignItems: 'center' }}>
@@ -657,11 +658,10 @@ export default function RoutinesScreen({ route, navigation }) {
                     gender="male"
                     side="front"
                     scale={musculosFront.length > 0 && musculosBack.length > 0 ? 0.6 : 0.85}
-                    colors={[theme.border, theme.primary]}
+                    colors={['#f97316', theme.primary]}
                   />
                 </View>
               )}
-              {/* Vista posterior — solo si hay músculos posteriores */}
               {musculosBack.length > 0 && (
                 <View style={{ alignItems: 'center' }}>
                   <Text style={{ fontSize: 10, color: theme.textMuted, fontWeight: '600', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>
@@ -672,10 +672,22 @@ export default function RoutinesScreen({ route, navigation }) {
                     gender="male"
                     side="back"
                     scale={musculosFront.length > 0 && musculosBack.length > 0 ? 0.6 : 0.85}
-                    colors={[theme.border, theme.primary]}
+                    colors={['#f97316', theme.primary]}
                   />
                 </View>
               )}
+              </View>
+              {/* Leyenda */}
+              <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 20, marginTop: 4 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                  <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: theme.primary }} />
+                  <Text style={{ fontSize: 11, color: theme.textSecondary }}>Principal</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                  <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#f97316' }} />
+                  <Text style={{ fontSize: 11, color: theme.textSecondary }}>Secundario</Text>
+                </View>
+              </View>
             </View>
           </View>
         )}
