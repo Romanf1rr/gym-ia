@@ -5,8 +5,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../context/ThemeContext';
 import { api } from '../../services/api/api.service';
+
+const draftKey = (rutinaId, diaIndex) => `workout_draft_${rutinaId}_${diaIndex}`;
 
 const { width, height } = Dimensions.get('window');
 
@@ -140,6 +143,19 @@ export default function WorkoutSessionScreen({ route, navigation }) {
   const [guardando, setGuardando] = useState(false);
   const [modalHistorial, setModalHistorial] = useState(false);
 
+  // Restaurar borrador si existe
+  useEffect(() => {
+    AsyncStorage.getItem(draftKey(rutina.id, diaIndex)).then(raw => {
+      if (!raw) return;
+      try {
+        const draft = JSON.parse(raw);
+        if (draft.series) setSeries(draft.series);
+        if (draft.sessionSecs) setSessionSecs(draft.sessionSecs);
+        if (draft.ejercicioActual != null) setEjercicioActual(draft.ejercicioActual);
+      } catch {}
+    });
+  }, []);
+
   // Cronómetro sesión
   useEffect(() => {
     sessionTimer.current = setInterval(() => setSessionSecs(s => s + 1), 1000);
@@ -227,6 +243,17 @@ export default function WorkoutSessionScreen({ route, navigation }) {
   const todasCompletadas = () =>
     dia.ejercicios.every((_, i) => series[i]?.every(s => s.done));
 
+  const pausarSesion = async () => {
+    clearInterval(sessionTimer.current);
+    clearInterval(restTimer.current);
+    setRestActive(false);
+    await AsyncStorage.setItem(
+      draftKey(rutina.id, diaIndex),
+      JSON.stringify({ series, sessionSecs, ejercicioActual, savedAt: new Date().toISOString() })
+    );
+    navigation.goBack();
+  };
+
   const guardarSesion = async () => {
     setGuardando(true);
     clearInterval(sessionTimer.current);
@@ -251,6 +278,9 @@ export default function WorkoutSessionScreen({ route, navigation }) {
         notas: `Día ${diaIndex + 1}: ${dia.nombreDia}`,
       });
 
+      // Limpiar borrador al terminar
+      await AsyncStorage.removeItem(draftKey(rutina.id, diaIndex));
+
       navigation.replace('WorkoutSummary', {
         rutina, diaIndex, ejerciciosLog, duracion: sessionSecs,
       });
@@ -267,7 +297,7 @@ export default function WorkoutSessionScreen({ route, navigation }) {
         '¿Qué querés hacer?',
         [
           { text: 'Seguir entrenando', style: 'cancel' },
-          { text: 'Guardar igual', onPress: guardarSesion },
+          { text: 'Terminar igual', onPress: guardarSesion },
         ]
       );
       return;
@@ -277,12 +307,12 @@ export default function WorkoutSessionScreen({ route, navigation }) {
 
   const handleSalir = () => {
     Alert.alert(
-      '¿Salir de la sesión?',
-      'Tu progreso de esta sesión se perderá si salís sin guardar.',
+      '¿Qué querés hacer?',
+      'Podés pausar la sesión y retomar más tarde, o terminarla ahora.',
       [
         { text: 'Seguir entrenando', style: 'cancel' },
-        { text: 'Guardar y salir', onPress: guardarSesion },
-        { text: 'Salir sin guardar', style: 'destructive', onPress: () => navigation.goBack() },
+        { text: 'Pausar y salir', onPress: pausarSesion },
+        { text: 'Terminar sesión', onPress: guardarSesion },
       ]
     );
   };

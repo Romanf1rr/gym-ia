@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import Body from 'react-native-body-highlighter';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../../services/api/api.service';
 import cache from '../../services/api/cache.service';
 
@@ -53,8 +54,9 @@ export default function RoutinesScreen({ route, navigation }) {
   const [diaSeleccionado, setDiaSeleccionado] = useState(0);
   const [ejercicioModal, setEjercicioModal] = useState(null);
   const [usageInfo, setUsageInfo] = useState(null);
-  const [renombrando, setRenombrando] = useState(null); // id de rutina que se está renombrando
+  const [renombrando, setRenombrando] = useState(null);
   const [nuevoNombre, setNuevoNombre] = useState('');
+  const [tieneBorrador, setTieneBorrador] = useState(false);
 
   // Modal de configuración de rutina
   const [showGenerarModal, setShowGenerarModal] = useState(false);
@@ -133,6 +135,14 @@ export default function RoutinesScreen({ route, navigation }) {
       navigation.navigate('WorkoutSession', { rutina, diaIndex: diaIdx, historialPrevio: [] });
     }
   };
+
+  // Detectar si hay sesión pausada para el día seleccionado
+  useEffect(() => {
+    if (!rutina) { setTieneBorrador(false); return; }
+    AsyncStorage.getItem(`workout_draft_${rutina.id}_${diaSeleccionado}`)
+      .then(raw => setTieneBorrador(!!raw))
+      .catch(() => setTieneBorrador(false));
+  }, [rutina?.id, diaSeleccionado]);
 
   useEffect(() => {
     if (tab === 'calendario') {
@@ -666,14 +676,31 @@ export default function RoutinesScreen({ route, navigation }) {
           ))}
         </View>
 
-        {/* Botón empezar sesión */}
-        <View style={{ paddingHorizontal: 20, paddingBottom: 32 }}>
+        {/* Botón empezar / retomar sesión */}
+        <View style={{ paddingHorizontal: 20, paddingBottom: 32, gap: 10 }}>
+          {tieneBorrador && (
+            <TouchableOpacity
+              style={{ backgroundColor: theme.orange, paddingVertical: 16, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }}
+              onPress={() => iniciarSesion(diaSeleccionado)}
+            >
+              <Ionicons name="refresh-circle" size={22} color="#fff" />
+              <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#fff' }}>Retomar sesión pausada</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
-            style={{ backgroundColor: theme.primary, paddingVertical: 16, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }}
-            onPress={() => iniciarSesion(diaSeleccionado)}
+            style={{ backgroundColor: tieneBorrador ? theme.card : theme.primary, paddingVertical: 16, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, borderWidth: tieneBorrador ? 1 : 0, borderColor: theme.border }}
+            onPress={async () => {
+              if (tieneBorrador) {
+                await AsyncStorage.removeItem(`workout_draft_${rutina.id}_${diaSeleccionado}`);
+                setTieneBorrador(false);
+              }
+              iniciarSesion(diaSeleccionado);
+            }}
           >
-            <Ionicons name="play-circle" size={22} color="#fff" />
-            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#fff' }}>Empezar sesión</Text>
+            <Ionicons name="play-circle" size={22} color={tieneBorrador ? theme.text : '#fff'} />
+            <Text style={{ fontSize: 16, fontWeight: 'bold', color: tieneBorrador ? theme.text : '#fff' }}>
+              {tieneBorrador ? 'Empezar sesión nueva' : 'Empezar sesión'}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
