@@ -145,8 +145,8 @@ export default function ChatScreen() {
               <Ionicons name="sparkles" size={18} color="#fff" />
             </View>
             <View>
-              <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.text }}>Asistente IA</Text>
-              <Text style={{ fontSize: 11, color: theme.textSecondary }}>Fitness & Nutrición</Text>
+              <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.text }}>Chris</Text>
+              <Text style={{ fontSize: 11, color: theme.textSecondary }}>Tu coach personal · Gym IA</Text>
             </View>
           </View>
           {chatRestante !== null && (
@@ -161,10 +161,10 @@ export default function ChatScreen() {
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
             <Ionicons name="chatbubbles-outline" size={56} color={theme.border} />
             <Text style={{ fontSize: 17, fontWeight: 'bold', color: theme.text, marginTop: 16, marginBottom: 8, textAlign: 'center' }}>
-              ¡Hola! Soy tu asistente de fitness
+              ¡Hola! Soy Chris, tu coach de Gym IA
             </Text>
             <Text style={{ fontSize: 13, color: theme.textSecondary, textAlign: 'center', marginBottom: 24, lineHeight: 20 }}>
-              Preguntame sobre ejercicios, nutrición, técnica o motivación
+              Preguntame sobre entrenamiento, nutrición, técnica o motivación
             </Text>
             <View style={{ width: '100%', gap: 8 }}>
               {['¿Cómo mejorar mi técnica de sentadilla?', '¿Qué comer antes de entrenar?', 'Dame motivación para hoy'].map((s) => (
