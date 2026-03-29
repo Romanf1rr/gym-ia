@@ -260,7 +260,7 @@ const deleteRoutine = async (req, res) => {
 const logWorkout = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { rutinaId, ejercicios, duracion, notas } = req.body;
+    const { rutinaId, diaIndex, ejercicios, duracion, notas, fecha } = req.body;
 
     const entrenamiento = await prisma.entrenamiento.create({
       data: {
@@ -270,6 +270,7 @@ const logWorkout = async (req, res) => {
         duracion: duracion || null,
         notas: notas || null,
         completado: true,
+        // diaIndex y fecha se guardan dentro de ejercicios como metadata
       },
     });
 
@@ -277,6 +278,59 @@ const logWorkout = async (req, res) => {
   } catch (error) {
     console.error('Error registrando entrenamiento:', error);
     res.status(500).json({ message: 'Error al registrar entrenamiento' });
+  }
+};
+
+// Obtener historial de entrenamientos de una rutina
+const getWorkoutHistory = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { rutinaId } = req.params;
+
+    const entrenamientos = await prisma.entrenamiento.findMany({
+      where: { userId, rutinaId, completado: true },
+      orderBy: { fecha: 'desc' },
+      take: 30,
+    });
+
+    res.json(entrenamientos);
+  } catch (error) {
+    console.error('Error obteniendo historial:', error);
+    res.status(500).json({ message: 'Error al obtener historial' });
+  }
+};
+
+// Obtener entrenamientos del mes actual (para el calendario)
+const getWorkoutCalendar = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { year, month } = req.query;
+
+    const inicio = new Date(parseInt(year), parseInt(month) - 1, 1);
+    const fin = new Date(parseInt(year), parseInt(month), 1);
+
+    const entrenamientos = await prisma.entrenamiento.findMany({
+      where: {
+        userId,
+        completado: true,
+        fecha: { gte: inicio, lt: fin },
+      },
+      select: { id: true, fecha: true, rutinaId: true, duracion: true, ejercicios: true },
+      orderBy: { fecha: 'asc' },
+    });
+
+    // Agrupar por fecha (YYYY-MM-DD)
+    const porFecha = {};
+    entrenamientos.forEach(e => {
+      const dia = e.fecha.toISOString().split('T')[0];
+      if (!porFecha[dia]) porFecha[dia] = [];
+      porFecha[dia].push(e);
+    });
+
+    res.json(porFecha);
+  } catch (error) {
+    console.error('Error obteniendo calendario:', error);
+    res.status(500).json({ message: 'Error al obtener calendario' });
   }
 };
 
@@ -289,4 +343,6 @@ module.exports = {
   renameRoutine,
   deleteRoutine,
   logWorkout,
+  getWorkoutHistory,
+  getWorkoutCalendar,
 };

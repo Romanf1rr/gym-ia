@@ -58,6 +58,12 @@ router.delete('/:id', routineController.deleteRoutine);
 router.get('/:id', routineController.getRoutineById);
 
 // Registrar entrenamiento completado
-router.post('/workout/log', validate(schemas.logWorkout), routineController.logWorkout);
+router.post('/workout/log', routineController.logWorkout);
+
+// Historial de entrenamientos de una rutina
+router.get('/workout/history/:rutinaId', routineController.getWorkoutHistory);
+
+// Calendario de entrenamientos del mes
+router.get('/workout/calendar', routineController.getWorkoutCalendar);
 
 module.exports = router;

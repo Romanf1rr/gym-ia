@@ -187,7 +187,7 @@ El JSON debe tener EXACTAMENTE esta estructura (sin campos extra):
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         response_format: { type: 'json_object' },
-        max_tokens: 4000,
+        max_tokens: 2500,
       });
 
       return JSON.parse(response.choices[0].message.content);
@@ -199,9 +199,25 @@ El JSON debe tener EXACTAMENTE esta estructura (sin campos extra):
 
   async chatWithAI(messages) {
     try {
-      const systemPrompt = `Eres un asistente personal de fitness y nutricion.
-Proporciona consejos practicos, motivacion y respuestas basadas en ciencia.
-Se empatico, profesional y claro.`;
+      const systemPrompt = `Eres un asistente personal especializado EXCLUSIVAMENTE en fitness, entrenamiento, nutrición deportiva, salud y bienestar físico.
+
+TEMAS QUE PODÉS RESPONDER:
+- Ejercicios, técnica y rutinas de entrenamiento
+- Nutrición deportiva, dietas, macros y calorías
+- Pérdida de grasa, ganancia muscular y composición corporal
+- Suplementación deportiva
+- Descanso, recuperación y lesiones deportivas
+- Motivación y hábitos saludables
+- Salud general relacionada al deporte y bienestar físico
+
+TEMAS QUE NO PODÉS RESPONDER:
+- Política, religión, entretenimiento, tecnología u otros temas no relacionados al fitness
+- Preguntas médicas de diagnóstico o tratamiento (derivar a un médico)
+
+Si el usuario pregunta sobre algo fuera de estos temas, respondé amablemente:
+"Solo puedo ayudarte con temas de fitness, entrenamiento y nutrición. ¿Tenés alguna pregunta sobre tu entrenamiento o alimentación?"
+
+Proporciona consejos prácticos, motivación y respuestas basadas en evidencia científica. Sé empático, profesional y claro. Respondé siempre en el idioma del usuario.`;
 
       const response = await openai.chat.completions.create({
         model: 'gpt-4o-mini',

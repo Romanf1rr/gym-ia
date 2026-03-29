@@ -23,6 +23,9 @@ import AdminUsersScreen from '../screens/mobile/admin/AdminUsersScreen';
 import AdminModerationScreen from '../screens/mobile/admin/AdminModerationScreen';
 import MiAppHomeScreen from '../screens/mobile/admin/MiAppHomeScreen';
 import NutritionPDFScreen from '../screens/mobile/NutritionPDFScreen';
+import WorkoutSessionScreen from '../screens/mobile/WorkoutSessionScreen';
+import WorkoutSummaryScreen from '../screens/mobile/WorkoutSummaryScreen';
+import EditProfileScreen from '../screens/mobile/EditProfileScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -71,6 +74,7 @@ function ProfileStack() {
   return (
     <Stack.Navigator screenOptions={stackOptions}>
       <Stack.Screen name="ProfileMain" component={ProfileScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
       <Stack.Screen name="PhysicalProfile" component={PhysicalProfileScreen} options={{ title: 'Perfil Físico' }} />
       <Stack.Screen name="Progress" component={ProgressScreen} options={{ title: 'Mi Progreso' }} />
       <Stack.Screen name="Objetivos" component={ObjetivosScreen} options={{ title: 'Mis Objetivos' }} />
@@ -97,10 +101,13 @@ function MiAppStack() {
       <Stack.Screen name="MiAppHome" component={MiAppHomeScreen} options={{ headerShown: false }} />
       <Stack.Screen name="MiDashboard" component={DashboardScreen} options={{ title: 'Inicio' }} />
       <Stack.Screen name="Rutinas" component={RoutinesScreen} options={{ title: 'Rutinas' }} />
+      <Stack.Screen name="WorkoutSession" component={WorkoutSessionScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="WorkoutSummary" component={WorkoutSummaryScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Nutrición" component={NutritionScreen} options={{ title: 'Nutrición' }} />
       <Stack.Screen name="NutritionPDF" component={NutritionPDFScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat IA' }} />
       <Stack.Screen name="Perfil" component={ProfileScreen} options={{ title: 'Mi Perfil' }} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
       <Stack.Screen name="PhysicalProfile" component={PhysicalProfileScreen} options={{ title: 'Perfil Físico' }} />
       <Stack.Screen name="Objetivos" component={ObjetivosScreen} options={{ title: 'Mis Objetivos' }} />
       <Stack.Screen name="Progress" component={ProgressScreen} options={{ title: 'Mi Progreso' }} />
@@ -127,6 +134,17 @@ function NutritionStack() {
   );
 }
 
+function RoutinesStack() {
+  const stackOptions = useStackOptions();
+  return (
+    <Stack.Navigator screenOptions={stackOptions}>
+      <Stack.Screen name="RoutinesMain" component={RoutinesScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="WorkoutSession" component={WorkoutSessionScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="WorkoutSummary" component={WorkoutSummaryScreen} options={{ headerShown: false }} />
+    </Stack.Navigator>
+  );
+}
+
 function ClientTabs() {
   const tabBarStyle = useTabBarStyle();
   return (
@@ -144,7 +162,7 @@ function ClientTabs() {
       },
     })}>
       <Tab.Screen name="Inicio" component={DashboardStack} />
-      <Tab.Screen name="Rutinas" component={RoutinesScreen} />
+      <Tab.Screen name="Rutinas" component={RoutinesStack} />
       <Tab.Screen name="Progreso" component={ProgressStack} />
       <Tab.Screen name="Nutrición" component={NutritionStack} />
       <Tab.Screen name="Perfil" component={ProfileStack} />

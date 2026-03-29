@@ -5,6 +5,7 @@ const aiService = require('../services/ai/openai.service');
 const generateNutritionPlan = async (req, res) => {
   try {
     const userId = req.user.userId;
+    console.log('[Nutrition] Generando plan para usuario:', userId);
     const { restricciones, horaEntrenamiento, horaPrimerAlimento } = req.body;
 
     const [perfilFisico, objetivo, rutinaActiva] = await Promise.all([
@@ -26,7 +27,9 @@ const generateNutritionPlan = async (req, res) => {
       tipoRutina: rutinaActiva?.nombre || null,
     };
 
+    const t0 = Date.now();
     const planIA = await aiService.generateNutritionPlan(perfilFisico || {}, objetivo, extras);
+    console.log(`[Nutrition] OpenAI respondió en ${Date.now() - t0}ms`);
 
     // Desactivar plan anterior
     await prisma.planNutricional.updateMany({

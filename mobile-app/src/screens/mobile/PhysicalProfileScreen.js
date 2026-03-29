@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Dimensions
@@ -20,6 +21,7 @@ const { width } = Dimensions.get('window');
 export default function PhysicalProfileScreen({ navigation }) {
   const { theme } = useTheme();
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
   const [formData, setFormData] = useState({
     altura: '',
     peso: '',
@@ -32,6 +34,32 @@ export default function PhysicalProfileScreen({ navigation }) {
     circunferenciaMuslo: '',
     notas: '',
   });
+
+  useEffect(() => {
+    const loadExisting = async () => {
+      try {
+        const res = await api.get('/physical-profiles/latest').catch(() => null);
+        if (res?.data) {
+          const d = res.data;
+          setFormData({
+            altura: d.altura?.toString() || '',
+            peso: d.peso?.toString() || '',
+            porcentajeGrasa: d.porcentajeGrasa?.toString() || '',
+            masaMuscular: d.masaMuscular?.toString() || '',
+            circunferenciaBrazo: d.circunferenciaBrazo?.toString() || '',
+            circunferenciaPecho: d.circunferenciaPecho?.toString() || '',
+            circunferenciaCintura: d.circunferenciaCintura?.toString() || '',
+            circunferenciaCadera: d.circunferenciaCadera?.toString() || '',
+            circunferenciaMuslo: d.circunferenciaMuslo?.toString() || '',
+            notas: d.notas || '',
+          });
+        }
+      } finally {
+        setLoadingData(false);
+      }
+    };
+    loadExisting();
+  }, []);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -82,6 +110,14 @@ export default function PhysicalProfileScreen({ navigation }) {
     }
   };
 
+  if (loadingData) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.bg, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.bg }]} edges={['bottom']}>
       <KeyboardAvoidingView
@@ -91,7 +127,7 @@ export default function PhysicalProfileScreen({ navigation }) {
         <ScrollView style={styles.scrollView}>
           <View style={styles.header}>
             <Text style={[styles.title, { color: theme.text }]}>Perfil Físico</Text>
-            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Registra tus mediciones actuales</Text>
+            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Actualizá tus mediciones actuales</Text>
           </View>
 
           {/* Datos básicos */}

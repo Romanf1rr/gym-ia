@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   ActivityIndicator, RefreshControl, Modal, Image, Dimensions, Alert, TextInput
 } from 'react-native';
+import { Calendar } from 'react-native-calendars';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -39,7 +40,7 @@ const LUGAR_OPCIONES = ['Gym completo', 'Casa con equipo', 'Sin equipo'];
 const DURACION_OPCIONES = ['30 min', '45 min', '60 min', '90 min'];
 const ZONAS_OPCIONES = ['Todo el cuerpo', 'Pecho', 'Espalda', 'Piernas', 'Brazos', 'Core', 'Hombros'];
 
-export default function RoutinesScreen({ route }) {
+export default function RoutinesScreen({ route, navigation }) {
   const { theme } = useTheme();
   const [tab, setTab] = useState('activa'); // 'activa' | 'mis_rutinas'
   const [rutina, setRutina] = useState(null);
@@ -60,6 +61,14 @@ export default function RoutinesScreen({ route }) {
   const [selectedDuracion, setSelectedDuracion] = useState('60 min');
   const [selectedZonas, setSelectedZonas] = useState(['Todo el cuerpo']);
   const [lesiones, setLesiones] = useState('');
+
+  // Calendario
+  const [calendarData, setCalendarData] = useState({});
+  const [calendarLoading, setCalendarLoading] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
 
   const loadData = async () => {
     try {
@@ -94,6 +103,41 @@ export default function RoutinesScreen({ route }) {
     await loadData();
     setRefreshing(false);
   };
+
+  const loadCalendar = async (ym) => {
+    const [year, month] = ym.split('-');
+    setCalendarLoading(true);
+    try {
+      const res = await api.get(`/routines/workout/calendar?year=${year}&month=${month}`);
+      setCalendarData(res.data || {});
+    } catch {
+      setCalendarData({});
+    } finally {
+      setCalendarLoading(false);
+    }
+  };
+
+  const iniciarSesion = async (diaIdx) => {
+    try {
+      const histRes = await api.get(`/routines/workout/history/${rutina.id}`).catch(() => null);
+      const historial = histRes?.data || [];
+      const ultimoEste = historial.find(h =>
+        h.ejercicios?.some(e => e.diaIndex === diaIdx)
+      );
+      const historialPrevio = ultimoEste
+        ? ultimoEste.ejercicios?.filter(e => e.diaIndex === diaIdx)
+        : [];
+      navigation.navigate('WorkoutSession', { rutina, diaIndex: diaIdx, historialPrevio });
+    } catch {
+      navigation.navigate('WorkoutSession', { rutina, diaIndex: diaIdx, historialPrevio: [] });
+    }
+  };
+
+  useEffect(() => {
+    if (tab === 'calendario') {
+      loadCalendar(currentMonth);
+    }
+  }, [tab, currentMonth]);
 
   const toggleZona = (zona) => {
     if (zona === 'Todo el cuerpo') {
@@ -286,12 +330,15 @@ export default function RoutinesScreen({ route }) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={['top']}>
         {/* Tabs */}
-        <View style={{ flexDirection: 'row', padding: 16, paddingBottom: 8, gap: 8 }}>
+        <View style={{ flexDirection: 'row', padding: 16, paddingBottom: 8, gap: 6 }}>
           <TouchableOpacity onPress={() => setTab('activa')} style={{ flex: 1, paddingVertical: 10, borderRadius: 12, backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border, alignItems: 'center' }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: theme.textSecondary }}>Rutina activa</Text>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: theme.textSecondary }}>Rutina</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setTab('calendario')} style={{ flex: 1, paddingVertical: 10, borderRadius: 12, backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border, alignItems: 'center' }}>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: theme.textSecondary }}>Calendario</Text>
           </TouchableOpacity>
           <TouchableOpacity style={{ flex: 1, paddingVertical: 10, borderRadius: 12, backgroundColor: theme.primary, alignItems: 'center' }}>
-            <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>Mis rutinas</Text>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: '#fff' }}>Mis rutinas</Text>
           </TouchableOpacity>
         </View>
 
@@ -388,21 +435,117 @@ export default function RoutinesScreen({ route }) {
     );
   }
 
+  // Vista "Calendario"
+  if (tab === 'calendario') {
+    const markedDates = {};
+    Object.keys(calendarData).forEach((fecha) => {
+      markedDates[fecha] = { marked: true, dotColor: theme.primary };
+    });
+
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={['top']}>
+        {/* Tabs */}
+        <View style={{ flexDirection: 'row', padding: 16, paddingBottom: 8, gap: 6 }}>
+          <TouchableOpacity onPress={() => setTab('activa')} style={{ flex: 1, paddingVertical: 10, borderRadius: 12, backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border, alignItems: 'center' }}>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: theme.textSecondary }}>Rutina</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={{ flex: 1, paddingVertical: 10, borderRadius: 12, backgroundColor: theme.primary, alignItems: 'center' }}>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: '#fff' }}>Calendario</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setTab('mis_rutinas')} style={{ flex: 1, paddingVertical: 10, borderRadius: 12, backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border, alignItems: 'center' }}>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: theme.textSecondary }}>Mis rutinas</Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView contentContainerStyle={{ padding: 16 }}>
+          <Calendar
+            key={currentMonth}
+            current={currentMonth + '-01'}
+            markedDates={markedDates}
+            onMonthChange={(month) => {
+              setCurrentMonth(`${month.year}-${String(month.month).padStart(2, '0')}`);
+            }}
+            theme={{
+              backgroundColor: theme.bg,
+              calendarBackground: theme.card,
+              textSectionTitleColor: theme.textMuted,
+              selectedDayBackgroundColor: theme.primary,
+              selectedDayTextColor: '#fff',
+              todayTextColor: theme.primary,
+              dayTextColor: theme.text,
+              textDisabledColor: theme.border,
+              dotColor: theme.primary,
+              selectedDotColor: '#fff',
+              arrowColor: theme.primary,
+              monthTextColor: theme.text,
+            }}
+            style={{ borderRadius: 14, borderWidth: 1, borderColor: theme.border, overflow: 'hidden' }}
+          />
+
+          {calendarLoading && <ActivityIndicator color={theme.primary} style={{ marginTop: 20 }} />}
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14, padding: 12, backgroundColor: theme.card, borderRadius: 12, borderWidth: 1, borderColor: theme.border }}>
+            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: theme.primary }} />
+            <Text style={{ fontSize: 13, color: theme.textSecondary }}>Día con entrenamiento completado</Text>
+          </View>
+
+          {Object.entries(calendarData).length > 0 ? (
+            <View style={{ marginTop: 20 }}>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: theme.text, marginBottom: 12 }}>
+                {new Date(currentMonth + '-15').toLocaleDateString('es', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase())}
+              </Text>
+              {Object.entries(calendarData)
+                .sort((a, b) => b[0].localeCompare(a[0]))
+                .map(([fecha, entrenos]) => (
+                  <View key={fecha} style={{ backgroundColor: theme.card, borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: theme.border }}>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text, marginBottom: 6 }}>
+                      {new Date(fecha + 'T12:00:00').toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' }).replace(/^\w/, c => c.toUpperCase())}
+                    </Text>
+                    {entrenos.map((e, i) => (
+                      <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                        <Ionicons name="checkmark-circle" size={14} color={theme.primary} />
+                        <Text style={{ fontSize: 13, color: theme.textSecondary }}>
+                          {e.duracion ? `${e.duracion} min` : 'Sesión completada'} · {e.ejercicios?.length || 0} ejercicios
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                ))}
+            </View>
+          ) : !calendarLoading ? (
+            <View style={{ alignItems: 'center', paddingTop: 32 }}>
+              <Ionicons name="calendar-outline" size={56} color={theme.border} />
+              <Text style={{ fontSize: 15, color: theme.textSecondary, marginTop: 12, textAlign: 'center' }}>
+                Sin entrenamientos este mes
+              </Text>
+              <Text style={{ fontSize: 13, color: theme.textMuted, marginTop: 6, textAlign: 'center' }}>
+                Completá una sesión para verla aquí
+              </Text>
+            </View>
+          ) : null}
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={['top']}>
       <ScrollView
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
       >
         {/* Tabs */}
-        <View style={{ flexDirection: 'row', padding: 16, paddingBottom: 8, gap: 8 }}>
+        <View style={{ flexDirection: 'row', padding: 16, paddingBottom: 8, gap: 6 }}>
           <TouchableOpacity style={{ flex: 1, paddingVertical: 10, borderRadius: 12, backgroundColor: theme.primary, alignItems: 'center' }}>
-            <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>Rutina activa</Text>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: '#fff' }}>Rutina</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setTab('mis_rutinas')} style={{ flex: 1, paddingVertical: 10, borderRadius: 12, backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: theme.textSecondary }}>Mis rutinas</Text>
+          <TouchableOpacity onPress={() => setTab('calendario')} style={{ flex: 1, paddingVertical: 10, borderRadius: 12, backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border, alignItems: 'center' }}>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: theme.textSecondary }}>Calendario</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setTab('mis_rutinas')} style={{ flex: 1, paddingVertical: 10, borderRadius: 12, backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 4 }}>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: theme.textSecondary }}>Mis rutinas</Text>
             {todasRutinas.length > 0 && (
-              <View style={{ backgroundColor: theme.primary, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 1 }}>
-                <Text style={{ fontSize: 11, color: '#fff', fontWeight: '700' }}>{todasRutinas.length}</Text>
+              <View style={{ backgroundColor: theme.primary, borderRadius: 10, paddingHorizontal: 5, paddingVertical: 1 }}>
+                <Text style={{ fontSize: 10, color: '#fff', fontWeight: '700' }}>{todasRutinas.length}</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -475,7 +618,7 @@ export default function RoutinesScreen({ route }) {
         )}
 
         {/* Lista de ejercicios */}
-        <View style={{ paddingHorizontal: 20, paddingBottom: 32 }}>
+        <View style={{ paddingHorizontal: 20, paddingBottom: 12 }}>
           <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.text, marginBottom: 12 }}>
             Ejercicios — {diaActual.nombreDia || `Día ${diaActual.dia}`}
           </Text>
@@ -513,6 +656,17 @@ export default function RoutinesScreen({ route }) {
               <Ionicons name="chevron-forward" size={20} color={theme.textMuted} style={{ marginRight: 8 }} />
             </TouchableOpacity>
           ))}
+        </View>
+
+        {/* Botón empezar sesión */}
+        <View style={{ paddingHorizontal: 20, paddingBottom: 32 }}>
+          <TouchableOpacity
+            style={{ backgroundColor: theme.primary, paddingVertical: 16, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }}
+            onPress={() => iniciarSesion(diaSeleccionado)}
+          >
+            <Ionicons name="play-circle" size={22} color="#fff" />
+            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#fff' }}>Empezar sesión</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
 

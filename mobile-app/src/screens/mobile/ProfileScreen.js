@@ -65,7 +65,7 @@ export default function ProfileScreen({ navigation }) {
 
           <TouchableOpacity
             style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: theme.card, padding: 16, borderRadius: 12, marginBottom: 8, borderWidth: 1, borderColor: theme.border }}
-            onPress={() => Alert.alert('Próximamente', 'Esta función estará disponible pronto')}
+            onPress={() => navigation.navigate('EditProfile')}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="person-outline" size={24} color={theme.primary} />
