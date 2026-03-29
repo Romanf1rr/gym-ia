@@ -24,7 +24,7 @@ const formatTime = (secs) => {
 };
 
 // ── Rest Timer Overlay ─────────────────────────────────────────────────────────
-function RestTimerOverlay({ visible, restSecs, restTotal, nextEjNombre, onSkip, theme }) {
+function RestTimerOverlay({ visible, restSecs, restTotal, nextLabel, nextSublabel, onSkip, theme }) {
   const progress = restTotal > 0 ? restSecs / restTotal : 0;
   const progressAnim = useRef(new Animated.Value(1)).current;
 
@@ -73,13 +73,20 @@ function RestTimerOverlay({ visible, restSecs, restTotal, nextEjNombre, onSkip, 
           <Animated.View style={{ height: 4, backgroundColor: theme.primary, borderRadius: 2, width: barWidth }} />
         </View>
 
-        {/* Next exercise */}
-        {nextEjNombre && (
+        {/* What's next */}
+        {nextLabel && (
           <View style={{ alignItems: 'center', marginBottom: 32 }}>
-            <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>SIGUIENTE EJERCICIO</Text>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: 'rgba(255,255,255,0.85)', textAlign: 'center', maxWidth: width * 0.7 }}>
-              {nextEjNombre}
+            <Text style={{ fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>
+              LO QUE SIGUE
             </Text>
+            <Text style={{ fontSize: 17, fontWeight: '800', color: 'rgba(255,255,255,0.9)', textAlign: 'center', maxWidth: width * 0.72 }}>
+              {nextLabel}
+            </Text>
+            {nextSublabel && (
+              <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginTop: 4, textAlign: 'center', maxWidth: width * 0.65 }}>
+                {nextSublabel}
+              </Text>
+            )}
           </View>
         )}
 
@@ -112,6 +119,8 @@ export default function WorkoutSessionScreen({ route, navigation }) {
   const [restActive, setRestActive] = useState(false);
   const restTimer = useRef(null);
   const [restTotal, setRestTotal] = useState(0);
+  const [restNextLabel, setRestNextLabel] = useState('');
+  const [restNextSublabel, setRestNextSublabel] = useState('');
 
   // Estado por ejercicio: { [i]: [{ reps, peso, done }] }
   const [series, setSeries] = useState(() => {
@@ -157,9 +166,11 @@ export default function WorkoutSessionScreen({ route, navigation }) {
     return () => clearInterval(restTimer.current);
   }, [restActive]);
 
-  const iniciarDescanso = (segundos) => {
+  const iniciarDescanso = (segundos, nextLabel, nextSublabel) => {
     setRestTotal(segundos);
     setRestSecs(segundos);
+    setRestNextLabel(nextLabel || '');
+    setRestNextSublabel(nextSublabel || '');
     setRestActive(true);
   };
 
@@ -184,11 +195,31 @@ export default function WorkoutSessionScreen({ route, navigation }) {
     updateSerie(ejIndex, serieIndex, 'done', true);
 
     const segs = parsearDescanso(ej.descanso);
-    iniciarDescanso(segs);
+    const totalSeriesEj = ej.series;
+    const nextSerieNum = serieIndex + 2; // 1-based number of next serie
+    const esUltimaSerie = serieIndex + 1 >= totalSeriesEj;
+    const hayNextEj = ejIndex < dia.ejercicios.length - 1;
+    const nextEj = dia.ejercicios[ejIndex + 1];
+
+    let nextLabel = '';
+    let nextSublabel = '';
+
+    if (!esUltimaSerie) {
+      // Más series del mismo ejercicio
+      nextLabel = `Serie ${nextSerieNum} de ${totalSeriesEj}`;
+      nextSublabel = ej.nombre;
+    } else if (hayNextEj) {
+      // Siguiente ejercicio
+      nextLabel = nextEj.nombre;
+      nextSublabel = `${nextEj.series} series · ${nextEj.repeticiones} reps`;
+    }
+    // Si es la última serie del último ejercicio: no hay "lo que sigue"
+
+    iniciarDescanso(segs, nextLabel, nextSublabel);
 
     const seriesEj = series[ejIndex];
     const todasDone = seriesEj.every((s, i) => i === serieIndex || s.done);
-    if (todasDone && ejIndex < dia.ejercicios.length - 1) {
+    if (todasDone && hayNextEj) {
       setTimeout(() => setEjercicioActual(ejIndex + 1), 300);
     }
   };
@@ -261,7 +292,6 @@ export default function WorkoutSessionScreen({ route, navigation }) {
   const completadasEjActual = seriesEjActual.filter(s => s.done).length;
   const prevEj = historialPrevio?.find(h => h.nombre === ej?.nombre);
   const gifSource = getGifUrl(ej?.gifUrl || ej?.gif);
-  const nextEj = dia.ejercicios[ejercicioActual + 1];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={['top']}>
@@ -271,7 +301,8 @@ export default function WorkoutSessionScreen({ route, navigation }) {
         visible={restActive}
         restSecs={restSecs}
         restTotal={restTotal}
-        nextEjNombre={nextEj?.nombre}
+        nextLabel={restNextLabel}
+        nextSublabel={restNextSublabel}
         onSkip={() => setRestActive(false)}
         theme={theme}
       />
