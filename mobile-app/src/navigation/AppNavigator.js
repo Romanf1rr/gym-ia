@@ -6,6 +6,7 @@ import { ActivityIndicator, View } from 'react-native';
 import useAuthStore from '../store/authStore';
 import AuthNavigator from './AuthNavigator';
 import TabNavigator from './TabNavigator';
+import PremiumScreen from '../screens/mobile/PremiumScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -32,6 +33,11 @@ export default function AppNavigator() {
         ) : (
           <Stack.Screen name="Auth" component={AuthNavigator} />
         )}
+        <Stack.Screen
+          name="Premium"
+          component={PremiumScreen}
+          options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

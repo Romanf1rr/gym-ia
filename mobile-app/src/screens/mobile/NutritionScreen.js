@@ -140,7 +140,7 @@ export default function NutritionScreen() {
         esLimite ? 'Límite alcanzado' : 'Error',
         err.response?.data?.message || 'Error al generar plan',
         esLimite
-          ? [{ text: 'Cancelar', style: 'cancel' }, { text: 'Ver Premium', onPress: () => {} }]
+          ? [{ text: 'Cancelar', style: 'cancel' }, { text: 'Ver Premium', onPress: () => navigation.navigate('Premium') }]
           : [{ text: 'OK' }]
       );
     } finally {

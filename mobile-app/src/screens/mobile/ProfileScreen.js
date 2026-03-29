@@ -47,11 +47,14 @@ export default function ProfileScreen({ navigation }) {
             <Text style={{ fontSize: 24, fontWeight: 'bold', color: theme.text }}>
               {user?.nombre} {user?.apellido}
             </Text>
-            <View style={{ paddingVertical: 2, paddingHorizontal: 8, borderRadius: 10, backgroundColor: isPremium ? theme.yellow + '33' : theme.border }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: isPremium ? theme.yellow : theme.textSecondary }}>
-                {isPremium ? 'PREMIUM' : 'FREE'}
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Premium')}
+              style={{ paddingVertical: 3, paddingHorizontal: 10, borderRadius: 10, backgroundColor: isPremium ? theme.yellow + '33' : theme.primary + '20', borderWidth: 1, borderColor: isPremium ? theme.yellow + '60' : theme.primary + '40' }}
+            >
+              <Text style={{ fontSize: 11, fontWeight: '700', color: isPremium ? theme.yellow : theme.primary }}>
+                {isPremium ? '👑 PREMIUM' : '⚡ FREE'}
               </Text>
-            </View>
+            </TouchableOpacity>
           </View>
 
           <Text style={{ fontSize: 14, color: theme.textSecondary, marginTop: 4 }}>{user?.email}</Text>

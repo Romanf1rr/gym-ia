@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { api } from '../../services/api/api.service';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -13,6 +13,7 @@ const { width } = Dimensions.get('window');
 
 export default function ChatScreen() {
   const { theme } = useTheme();
+  const navigation = useNavigation();
   const [mensajes, setMensajes] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(true);
@@ -77,7 +78,7 @@ export default function ChatScreen() {
         mensaje,
         esLimite ? [
           { text: 'Cancelar', style: 'cancel' },
-          { text: 'Ver Premium', onPress: () => {} },
+          { text: 'Ver Premium', onPress: () => navigation.navigate('Premium') },
         ] : [{ text: 'OK' }]
       );
     } finally {

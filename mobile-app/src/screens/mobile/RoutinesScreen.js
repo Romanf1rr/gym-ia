@@ -174,7 +174,7 @@ export default function RoutinesScreen({ route, navigation }) {
       if (esLimite) {
         Alert.alert('Límite alcanzado', msg, [
           { text: 'Cancelar', style: 'cancel' },
-          { text: 'Ver Premium', onPress: () => {} },
+          { text: 'Ver Premium', onPress: () => navigation.navigate('Premium') },
         ]);
       } else {
         // Aunque haya error en la respuesta, la rutina pudo haberse creado — recargar
