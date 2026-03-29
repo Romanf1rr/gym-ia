@@ -1,20 +1,103 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
-  Alert, Modal, ActivityIndicator, Vibration, AppState,
+  Alert, Modal, ActivityIndicator, Vibration, Animated, Dimensions, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { api } from '../../services/api/api.service';
 
-// Formatea segundos como mm:ss
+const { width, height } = Dimensions.get('window');
+
+const API_BASE = (process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.65:3000/api/v1').replace('/api/v1', '');
+const getGifUrl = (value) => {
+  if (!value) return null;
+  if (typeof value === 'string' && value.startsWith('http')) return value;
+  return `${API_BASE}/api/v1/routines/gif/${value}`;
+};
+
 const formatTime = (secs) => {
   const m = Math.floor(secs / 60).toString().padStart(2, '0');
   const s = (secs % 60).toString().padStart(2, '0');
   return `${m}:${s}`;
 };
 
+// ── Rest Timer Overlay ─────────────────────────────────────────────────────────
+function RestTimerOverlay({ visible, restSecs, restTotal, nextEjNombre, onSkip, theme }) {
+  const progress = restTotal > 0 ? restSecs / restTotal : 0;
+  const progressAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (visible && restTotal > 0) {
+      progressAnim.setValue(1);
+      Animated.timing(progressAnim, {
+        toValue: 0,
+        duration: restTotal * 1000,
+        useNativeDriver: false,
+      }).start();
+    }
+  }, [visible, restTotal]);
+
+  const barWidth = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
+
+  if (!visible) return null;
+
+  return (
+    <Modal transparent animationType="fade" visible={visible} statusBarTranslucent>
+      <View style={{
+        flex: 1, backgroundColor: 'rgba(0,0,0,0.92)',
+        justifyContent: 'center', alignItems: 'center',
+      }}>
+        {/* Countdown circle */}
+        <View style={{
+          width: 200, height: 200, borderRadius: 100,
+          borderWidth: 6, borderColor: theme.primary + '40',
+          justifyContent: 'center', alignItems: 'center', marginBottom: 24,
+          backgroundColor: theme.primary + '10',
+        }}>
+          <Text style={{ fontSize: 11, fontWeight: '700', color: theme.primary, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 4 }}>
+            DESCANSO
+          </Text>
+          <Text style={{ fontSize: 72, fontWeight: '900', color: '#fff', lineHeight: 80 }}>
+            {restSecs}
+          </Text>
+          <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>segundos</Text>
+        </View>
+
+        {/* Progress bar */}
+        <View style={{ width: width * 0.7, height: 4, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 2, overflow: 'hidden', marginBottom: 32 }}>
+          <Animated.View style={{ height: 4, backgroundColor: theme.primary, borderRadius: 2, width: barWidth }} />
+        </View>
+
+        {/* Next exercise */}
+        {nextEjNombre && (
+          <View style={{ alignItems: 'center', marginBottom: 32 }}>
+            <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>SIGUIENTE EJERCICIO</Text>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: 'rgba(255,255,255,0.85)', textAlign: 'center', maxWidth: width * 0.7 }}>
+              {nextEjNombre}
+            </Text>
+          </View>
+        )}
+
+        <TouchableOpacity
+          onPress={onSkip}
+          style={{
+            paddingHorizontal: 40, paddingVertical: 14,
+            borderRadius: 30, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.25)',
+          }}
+        >
+          <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>Saltar descanso →</Text>
+        </TouchableOpacity>
+      </View>
+    </Modal>
+  );
+}
+
+// ── Main Screen ────────────────────────────────────────────────────────────────
 export default function WorkoutSessionScreen({ route, navigation }) {
   const { rutina, diaIndex, historialPrevio } = route.params;
   const { theme } = useTheme();
@@ -24,7 +107,7 @@ export default function WorkoutSessionScreen({ route, navigation }) {
   const [sessionSecs, setSessionSecs] = useState(0);
   const sessionTimer = useRef(null);
 
-  // Descanso entre series
+  // Descanso
   const [restSecs, setRestSecs] = useState(0);
   const [restActive, setRestActive] = useState(false);
   const restTimer = useRef(null);
@@ -86,7 +169,7 @@ export default function WorkoutSessionScreen({ route, navigation }) {
     return match ? parseInt(match[1]) : 60;
   };
 
-  const updateSerie = (ejIndex, serieIndex, field, value) => {
+  const updateSerie = useCallback((ejIndex, serieIndex, field, value) => {
     setSeries(prev => {
       const nuevo = { ...prev };
       nuevo[ejIndex] = nuevo[ejIndex].map((s, i) =>
@@ -94,44 +177,24 @@ export default function WorkoutSessionScreen({ route, navigation }) {
       );
       return nuevo;
     });
-  };
+  }, []);
 
   const completarSerie = (ejIndex, serieIndex) => {
     const ej = dia.ejercicios[ejIndex];
     updateSerie(ejIndex, serieIndex, 'done', true);
 
-    // Iniciar descanso automático
     const segs = parsearDescanso(ej.descanso);
     iniciarDescanso(segs);
 
-    // Si completó todas las series del ejercicio, avanzar al siguiente
     const seriesEj = series[ejIndex];
     const todasDone = seriesEj.every((s, i) => i === serieIndex || s.done);
     if (todasDone && ejIndex < dia.ejercicios.length - 1) {
-      setTimeout(() => setEjercicioActual(ejIndex + 1), 500);
+      setTimeout(() => setEjercicioActual(ejIndex + 1), 300);
     }
   };
 
-  const todasCompletadas = () => {
-    return dia.ejercicios.every((_, i) =>
-      series[i]?.every(s => s.done)
-    );
-  };
-
-  const finalizarSesion = async () => {
-    if (!todasCompletadas()) {
-      Alert.alert(
-        'Sesión incompleta',
-        '¿Querés guardar la sesión aunque no completaste todos los ejercicios?',
-        [
-          { text: 'Seguir entrenando', style: 'cancel' },
-          { text: 'Guardar igual', onPress: () => guardarSesion() },
-        ]
-      );
-      return;
-    }
-    guardarSesion();
-  };
+  const todasCompletadas = () =>
+    dia.ejercicios.every((_, i) => series[i]?.every(s => s.done));
 
   const guardarSesion = async () => {
     setGuardando(true);
@@ -158,71 +221,91 @@ export default function WorkoutSessionScreen({ route, navigation }) {
       });
 
       navigation.replace('WorkoutSummary', {
-        rutina,
-        diaIndex,
-        ejerciciosLog,
-        duracion: sessionSecs,
+        rutina, diaIndex, ejerciciosLog, duracion: sessionSecs,
       });
-    } catch (e) {
+    } catch {
       Alert.alert('Error', 'No se pudo guardar la sesión');
       setGuardando(false);
     }
+  };
+
+  const finalizarSesion = () => {
+    if (!todasCompletadas()) {
+      Alert.alert(
+        'Sesión incompleta',
+        '¿Qué querés hacer?',
+        [
+          { text: 'Seguir entrenando', style: 'cancel' },
+          { text: 'Guardar igual', onPress: guardarSesion },
+        ]
+      );
+      return;
+    }
+    guardarSesion();
+  };
+
+  const handleSalir = () => {
+    Alert.alert(
+      '¿Salir de la sesión?',
+      'Tu progreso de esta sesión se perderá si salís sin guardar.',
+      [
+        { text: 'Seguir entrenando', style: 'cancel' },
+        { text: 'Guardar y salir', onPress: guardarSesion },
+        { text: 'Salir sin guardar', style: 'destructive', onPress: () => navigation.goBack() },
+      ]
+    );
   };
 
   const ej = dia.ejercicios[ejercicioActual];
   const seriesEjActual = series[ejercicioActual] || [];
   const completadasEjActual = seriesEjActual.filter(s => s.done).length;
   const prevEj = historialPrevio?.find(h => h.nombre === ej?.nombre);
+  const gifSource = getGifUrl(ej?.gifUrl || ej?.gif);
+  const nextEj = dia.ejercicios[ejercicioActual + 1];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={['top']}>
 
+      {/* Rest timer fullscreen overlay */}
+      <RestTimerOverlay
+        visible={restActive}
+        restSecs={restSecs}
+        restTotal={restTotal}
+        nextEjNombre={nextEj?.nombre}
+        onSkip={() => setRestActive(false)}
+        theme={theme}
+      />
+
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderColor: theme.border }}>
-        <TouchableOpacity onPress={() => Alert.alert('¿Salir?', 'Perderás el progreso de esta sesión.', [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Salir', style: 'destructive', onPress: () => navigation.goBack() },
-        ])}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderColor: theme.border }}>
+        <TouchableOpacity onPress={handleSalir} style={{ padding: 4 }}>
           <Ionicons name="close" size={24} color={theme.text} />
         </TouchableOpacity>
         <View style={{ flex: 1, alignItems: 'center' }}>
           <Text style={{ fontSize: 15, fontWeight: '700', color: theme.text }} numberOfLines={1}>{dia.nombreDia}</Text>
-          <Text style={{ fontSize: 13, color: theme.primary, fontWeight: '600' }}>{formatTime(sessionSecs)}</Text>
+          <Text style={{ fontSize: 13, color: theme.primary, fontWeight: '700' }}>{formatTime(sessionSecs)}</Text>
         </View>
-        <TouchableOpacity onPress={() => setModalHistorial(true)}>
+        <TouchableOpacity onPress={() => setModalHistorial(true)} style={{ padding: 4 }}>
           <Ionicons name="time-outline" size={22} color={theme.textMuted} />
         </TouchableOpacity>
       </View>
 
-      {/* Descanso overlay */}
-      {restActive && (
-        <View style={{ backgroundColor: theme.primary, paddingVertical: 10, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Ionicons name="timer-outline" size={18} color="#fff" />
-            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Descanso: {formatTime(restSecs)}</Text>
-          </View>
-          <TouchableOpacity onPress={() => setRestActive(false)}>
-            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>Saltar</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Navegación entre ejercicios */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ maxHeight: 52, borderBottomWidth: 1, borderColor: theme.border }}>
+      {/* Tab de ejercicios */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ maxHeight: 50, borderBottomWidth: 1, borderColor: theme.border }}>
         {dia.ejercicios.map((e, i) => {
           const done = series[i]?.every(s => s.done);
-          const parcial = series[i]?.some(s => s.done);
+          const parcial = !done && series[i]?.some(s => s.done);
           return (
             <TouchableOpacity
               key={i}
               onPress={() => setEjercicioActual(i)}
-              style={{ paddingHorizontal: 14, paddingVertical: 14, borderBottomWidth: 2, borderColor: ejercicioActual === i ? theme.primary : 'transparent', flexDirection: 'row', alignItems: 'center', gap: 6 }}
+              style={{ paddingHorizontal: 14, paddingVertical: 14, borderBottomWidth: 2, borderColor: ejercicioActual === i ? theme.primary : 'transparent', flexDirection: 'row', alignItems: 'center', gap: 5 }}
             >
               {done
-                ? <Ionicons name="checkmark-circle" size={14} color={theme.primary} />
+                ? <Ionicons name="checkmark-circle" size={13} color={theme.primary} />
                 : parcial
-                ? <Ionicons name="ellipse" size={10} color={theme.orange} />
-                : <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: theme.border }} />
+                ? <Ionicons name="ellipse" size={9} color={theme.orange} />
+                : <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: theme.border }} />
               }
               <Text style={{ fontSize: 12, fontWeight: ejercicioActual === i ? '700' : '400', color: ejercicioActual === i ? theme.primary : theme.textMuted }}>
                 {i + 1}. {e.nombre.split(' ').slice(0, 2).join(' ')}
@@ -232,36 +315,49 @@ export default function WorkoutSessionScreen({ route, navigation }) {
         })}
       </ScrollView>
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }} keyboardShouldPersistTaps="handled">
 
-        {/* Ejercicio actual */}
-        <View style={{ marginBottom: 16 }}>
-          <Text style={{ fontSize: 20, fontWeight: '800', color: theme.text, marginBottom: 4 }}>{ej.nombre}</Text>
-          <View style={{ flexDirection: 'row', gap: 10, marginBottom: 4 }}>
-            <Text style={{ fontSize: 13, color: theme.textMuted }}>{ej.series} series · {ej.repeticiones} reps · {ej.descanso} descanso</Text>
-          </View>
-          {ej.instrucciones && (
-            <Text style={{ fontSize: 12, color: theme.textSecondary, fontStyle: 'italic' }}>{ej.instrucciones}</Text>
-          )}
-          {/* Dato del historial previo */}
-          {prevEj && (
-            <View style={{ marginTop: 8, backgroundColor: theme.primary + '15', borderRadius: 8, padding: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Ionicons name="trending-up" size={14} color={theme.primary} />
-              <Text style={{ fontSize: 12, color: theme.primary, fontWeight: '600' }}>
-                Sesión anterior: {prevEj.seriesCompletadas?.map(s => `${s.peso}kg×${s.reps}`).join(' · ')}
-              </Text>
+        {/* GIF + Info del ejercicio */}
+        <View style={{ backgroundColor: theme.card, borderRadius: 16, borderWidth: 1, borderColor: theme.border, overflow: 'hidden', marginBottom: 16 }}>
+          {gifSource ? (
+            <Image
+              source={{ uri: gifSource }}
+              style={{ width: '100%', height: 200, backgroundColor: theme.bg }}
+              resizeMode="contain"
+            />
+          ) : (
+            <View style={{ width: '100%', height: 120, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bg }}>
+              <Ionicons name="barbell-outline" size={48} color={theme.border} />
             </View>
           )}
+          <View style={{ padding: 14 }}>
+            <Text style={{ fontSize: 18, fontWeight: '800', color: theme.text, marginBottom: 4 }}>{ej.nombre}</Text>
+            <Text style={{ fontSize: 13, color: theme.textMuted, marginBottom: 6 }}>
+              {ej.series} series · {ej.repeticiones} reps · {ej.descanso} descanso
+            </Text>
+            {ej.instrucciones && (
+              <Text style={{ fontSize: 12, color: theme.textSecondary, fontStyle: 'italic', lineHeight: 18 }}>{ej.instrucciones}</Text>
+            )}
+          </View>
         </View>
 
-        {/* Series */}
-        <View style={{ backgroundColor: theme.card, borderRadius: 14, borderWidth: 1, borderColor: theme.border, overflow: 'hidden', marginBottom: 20 }}>
-          {/* Header tabla */}
+        {/* Historial previo */}
+        {prevEj && (
+          <View style={{ backgroundColor: theme.primary + '12', borderRadius: 10, padding: 10, marginBottom: 14, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: theme.primary + '30' }}>
+            <Ionicons name="trending-up" size={15} color={theme.primary} />
+            <Text style={{ fontSize: 12, color: theme.primary, fontWeight: '600', flex: 1 }}>
+              Sesión anterior: {prevEj.seriesCompletadas?.map(s => `${s.peso}kg×${s.reps}`).join(' · ')}
+            </Text>
+          </View>
+        )}
+
+        {/* Tabla de series */}
+        <View style={{ backgroundColor: theme.card, borderRadius: 14, borderWidth: 1, borderColor: theme.border, overflow: 'hidden', marginBottom: 16 }}>
           <View style={{ flexDirection: 'row', paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderColor: theme.border, backgroundColor: theme.bg }}>
-            <Text style={{ width: 40, fontSize: 12, fontWeight: '700', color: theme.textMuted }}>SERIE</Text>
-            <Text style={{ flex: 1, fontSize: 12, fontWeight: '700', color: theme.textMuted, textAlign: 'center' }}>PESO (kg)</Text>
-            <Text style={{ flex: 1, fontSize: 12, fontWeight: '700', color: theme.textMuted, textAlign: 'center' }}>REPS</Text>
-            <Text style={{ width: 50, fontSize: 12, fontWeight: '700', color: theme.textMuted, textAlign: 'center' }}>✓</Text>
+            <Text style={{ width: 40, fontSize: 11, fontWeight: '700', color: theme.textMuted }}>SERIE</Text>
+            <Text style={{ flex: 1, fontSize: 11, fontWeight: '700', color: theme.textMuted, textAlign: 'center' }}>PESO (kg)</Text>
+            <Text style={{ flex: 1, fontSize: 11, fontWeight: '700', color: theme.textMuted, textAlign: 'center' }}>REPS</Text>
+            <Text style={{ width: 50, fontSize: 11, fontWeight: '700', color: theme.textMuted, textAlign: 'center' }}>✓</Text>
           </View>
 
           {seriesEjActual.map((s, si) => (
@@ -269,7 +365,7 @@ export default function WorkoutSessionScreen({ route, navigation }) {
               <Text style={{ width: 40, fontSize: 15, fontWeight: '700', color: s.done ? theme.primary : theme.textMuted }}>#{si + 1}</Text>
               <View style={{ flex: 1, alignItems: 'center' }}>
                 <TextInput
-                  style={{ backgroundColor: theme.bg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, fontSize: 16, fontWeight: '700', color: theme.text, borderWidth: 1, borderColor: theme.border, textAlign: 'center', minWidth: 70 }}
+                  style={{ backgroundColor: theme.bg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, fontSize: 16, fontWeight: '700', color: theme.text, borderWidth: 1, borderColor: s.done ? theme.primary + '40' : theme.border, textAlign: 'center', minWidth: 70 }}
                   value={s.peso}
                   onChangeText={v => updateSerie(ejercicioActual, si, 'peso', v)}
                   keyboardType="decimal-pad"
@@ -280,7 +376,7 @@ export default function WorkoutSessionScreen({ route, navigation }) {
               </View>
               <View style={{ flex: 1, alignItems: 'center' }}>
                 <TextInput
-                  style={{ backgroundColor: theme.bg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, fontSize: 16, fontWeight: '700', color: theme.text, borderWidth: 1, borderColor: theme.border, textAlign: 'center', minWidth: 70 }}
+                  style={{ backgroundColor: theme.bg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, fontSize: 16, fontWeight: '700', color: theme.text, borderWidth: 1, borderColor: s.done ? theme.primary + '40' : theme.border, textAlign: 'center', minWidth: 70 }}
                   value={s.reps}
                   onChangeText={v => updateSerie(ejercicioActual, si, 'reps', v)}
                   keyboardType="number-pad"
@@ -294,7 +390,7 @@ export default function WorkoutSessionScreen({ route, navigation }) {
                 onPress={() => !s.done && completarSerie(ejercicioActual, si)}
                 disabled={s.done}
               >
-                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: s.done ? theme.primary : theme.bg, borderWidth: 2, borderColor: s.done ? theme.primary : theme.border, justifyContent: 'center', alignItems: 'center' }}>
+                <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: s.done ? theme.primary : 'transparent', borderWidth: 2, borderColor: s.done ? theme.primary : theme.border, justifyContent: 'center', alignItems: 'center' }}>
                   {s.done && <Ionicons name="checkmark" size={18} color="#fff" />}
                 </View>
               </TouchableOpacity>
@@ -302,13 +398,13 @@ export default function WorkoutSessionScreen({ route, navigation }) {
           ))}
         </View>
 
-        {/* Progreso del ejercicio */}
-        <Text style={{ fontSize: 13, color: theme.textMuted, textAlign: 'center', marginBottom: 24 }}>
+        {/* Progreso */}
+        <Text style={{ fontSize: 13, color: theme.textMuted, textAlign: 'center', marginBottom: 20 }}>
           {completadasEjActual} de {seriesEjActual.length} series completadas
         </Text>
 
-        {/* Navegación ejercicios */}
-        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
+        {/* Navegación entre ejercicios */}
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
           {ejercicioActual > 0 && (
             <TouchableOpacity
               style={{ flex: 1, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: theme.border, alignItems: 'center' }}
@@ -350,7 +446,7 @@ export default function WorkoutSessionScreen({ route, navigation }) {
       {/* Modal historial previo */}
       <Modal visible={modalHistorial} animationType="slide" transparent>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
-          <View style={{ backgroundColor: theme.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '70%' }}>
+          <View style={{ backgroundColor: theme.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '70%' }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <Text style={{ fontSize: 18, fontWeight: 'bold', color: theme.text }}>Sesión anterior</Text>
               <TouchableOpacity onPress={() => setModalHistorial(false)}>
@@ -359,7 +455,7 @@ export default function WorkoutSessionScreen({ route, navigation }) {
             </View>
             <ScrollView>
               {historialPrevio?.length > 0 ? historialPrevio.map((h, i) => (
-                <View key={i} style={{ backgroundColor: theme.card, borderRadius: 12, padding: 12, marginBottom: 10, borderWidth: 1, borderColor: theme.border }}>
+                <View key={i} style={{ backgroundColor: theme.bg, borderRadius: 12, padding: 12, marginBottom: 10, borderWidth: 1, borderColor: theme.border }}>
                   <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text, marginBottom: 6 }}>{h.nombre}</Text>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                     {h.seriesCompletadas?.map((s, si) => (

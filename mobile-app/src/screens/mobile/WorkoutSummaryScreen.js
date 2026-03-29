@@ -80,7 +80,7 @@ export default function WorkoutSummaryScreen({ route, navigation }) {
         {/* Back button */}
         <TouchableOpacity
           style={{ backgroundColor: theme.primary, paddingVertical: 16, borderRadius: 14, alignItems: 'center', marginTop: 16, marginBottom: 32 }}
-          onPress={() => navigation.navigate('RoutinesMain')}
+          onPress={() => navigation.popToTop()}
         >
           <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#fff' }}>Volver a mis rutinas</Text>
         </TouchableOpacity>
