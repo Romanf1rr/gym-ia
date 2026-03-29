@@ -32,6 +32,17 @@ const MUSCLE_MAP = {
   forearms: 'forearms', adductors: 'adductors', obliques: 'obliques',
 };
 
+// Slugs que se muestran en la vista frontal del body highlighter
+const FRONT_SLUGS = new Set([
+  'chest', 'biceps', 'abs', 'quadriceps', 'deltoids',
+  'forearms', 'adductors', 'obliques',
+]);
+// Slugs que se muestran en la vista posterior
+const BACK_SLUGS = new Set([
+  'upper-back', 'lower-back', 'gluteal', 'hamstring',
+  'calves', 'triceps', 'trapezius',
+]);
+
 const mapMuscles = (musculos = [], intensity = 2) =>
   musculos
     .map((m) => MUSCLE_MAP[m?.toLowerCase()])
@@ -248,13 +259,24 @@ export default function RoutinesScreen({ route, navigation }) {
   };
 
   // useMemo must be before any early returns (Rules of Hooks)
-  const musculosHoy = useMemo(() => {
+  const { musculosHoy, musculosFront, musculosBack } = useMemo(() => {
     const dias = rutina?.ejercicios || [];
     const ejercicios = (dias[diaSeleccionado] || {}).ejercicios || [];
-    return [
+    const all = [
       ...mapMuscles(ejercicios.flatMap((e) => e.musculos || []), 2),
       ...mapMuscles(ejercicios.flatMap((e) => e.musculosSecundarios || []), 1),
     ];
+    // Deduplicate by slug (keep highest intensity)
+    const map = {};
+    all.forEach(({ slug, intensity }) => {
+      if (!map[slug] || intensity > map[slug].intensity) map[slug] = { slug, intensity };
+    });
+    const deduped = Object.values(map);
+    return {
+      musculosHoy: deduped,
+      musculosFront: deduped.filter(m => FRONT_SLUGS.has(m.slug)),
+      musculosBack: deduped.filter(m => BACK_SLUGS.has(m.slug)),
+    };
   }, [diaSeleccionado, rutina?.id]);
 
   if (loading) {
@@ -623,14 +645,37 @@ export default function RoutinesScreen({ route, navigation }) {
         {musculosHoy.length > 0 && (
           <View style={{ paddingHorizontal: 20, marginBottom: 8 }}>
             <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.text, marginBottom: 12 }}>Músculos del día</Text>
-            <View style={{ alignItems: 'center', backgroundColor: theme.card, borderRadius: 16, paddingVertical: 8, borderWidth: 1, borderColor: theme.border }}>
-              <Body
-                data={musculosHoy}
-                gender="male"
-                side="both"
-                scale={width < 380 ? 0.8 : 0.9}
-                colors={[theme.border, theme.primary]}
-              />
+            <View style={{ backgroundColor: theme.card, borderRadius: 16, paddingVertical: 12, borderWidth: 1, borderColor: theme.border, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' }}>
+              {/* Vista frontal — solo si hay músculos frontales */}
+              {musculosFront.length > 0 && (
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={{ fontSize: 10, color: theme.textMuted, fontWeight: '600', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                    Frente
+                  </Text>
+                  <Body
+                    data={musculosFront}
+                    gender="male"
+                    side="front"
+                    scale={musculosFront.length > 0 && musculosBack.length > 0 ? 0.6 : 0.85}
+                    colors={[theme.border, theme.primary]}
+                  />
+                </View>
+              )}
+              {/* Vista posterior — solo si hay músculos posteriores */}
+              {musculosBack.length > 0 && (
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={{ fontSize: 10, color: theme.textMuted, fontWeight: '600', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                    Espalda
+                  </Text>
+                  <Body
+                    data={musculosBack}
+                    gender="male"
+                    side="back"
+                    scale={musculosFront.length > 0 && musculosBack.length > 0 ? 0.6 : 0.85}
+                    colors={[theme.border, theme.primary]}
+                  />
+                </View>
+              )}
             </View>
           </View>
         )}
