@@ -32,16 +32,22 @@ const HORAS = [
 const MEAL_ICONS = {
   desayuno: 'sunny-outline',
   media_manana: 'cafe-outline',
+  colacion_1: 'cafe-outline',
   almuerzo: 'restaurant-outline',
+  comida: 'restaurant-outline',
   merienda: 'nutrition-outline',
+  colacion_2: 'nutrition-outline',
   cena: 'moon-outline',
 };
 
 const MEAL_LABELS = {
   desayuno: 'Desayuno',
-  media_manana: 'Media Mañana',
-  almuerzo: 'Almuerzo',
-  merienda: 'Merienda',
+  media_manana: 'Colación 1',
+  colacion_1: 'Colación 1',
+  almuerzo: 'Comida',
+  comida: 'Comida',
+  merienda: 'Colación 2',
+  colacion_2: 'Colación 2',
   cena: 'Cena',
 };
 
@@ -83,6 +89,10 @@ export default function NutritionScreen() {
   const [generating, setGenerating] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [usageInfo, setUsageInfo] = useState(null);
+  const [registrando, setRegistrando] = useState(null);
+  const [tab, setTab] = useState('hoy'); // 'hoy' | 'historial'
+  const [historial, setHistorial] = useState([]);
+  const [historialLoading, setHistorialLoading] = useState(false);
 
   // Modal
   const [showModal, setShowModal] = useState(false);
@@ -115,6 +125,47 @@ export default function NutritionScreen() {
     setRefreshing(true);
     await loadData(true);
     setRefreshing(false);
+  };
+
+  const loadHistorial = async () => {
+    setHistorialLoading(true);
+    try {
+      const res = await api.get('/nutrition/history?days=14');
+      setHistorial(res.data || []);
+    } catch {
+      setHistorial([]);
+    } finally {
+      setHistorialLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (tab === 'historial') loadHistorial();
+  }, [tab]);
+
+  const registrarComida = async (comida) => {
+    setRegistrando(comida.tipo);
+    try {
+      const alimentos = Array.isArray(comida.alimentos)
+        ? comida.alimentos.map((a) => (typeof a === 'string' ? a : a.nombre || String(a)))
+        : ['Comida del plan'];
+      await api.post('/nutrition/log', {
+        planNutricionalId: plan?.id || null,
+        tipoComida: comida.tipo,
+        alimentos,
+        caloriasTotal: comida.calorias || 0,
+        proteinasTotal: comida.proteinas || 0,
+        carbohidratosTotal: comida.carbohidratos || 0,
+        grasasTotal: comida.grasas || 0,
+      });
+      cache.invalidatePrefix('nutrition:');
+      cache.invalidate('dashboard:nutrition');
+      await loadData(true);
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.message || 'No se pudo registrar la comida');
+    } finally {
+      setRegistrando(null);
+    }
   };
 
   const generarPlan = async () => {
@@ -163,6 +214,7 @@ export default function NutritionScreen() {
   const totalesHoy = comidasHoy?.totales || { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0 };
   const metaCalorias = plan?.caloriasDiarias || 2000;
   const progresoCalorias = Math.min((totalesHoy.calorias / metaCalorias) * 100, 100);
+  const tiposRegistradosHoy = new Set((comidasHoy?.registros || []).map((r) => r.tipoComida));
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={['top']}>
@@ -170,29 +222,52 @@ export default function NutritionScreen() {
 
         {/* Header */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingBottom: 12 }}>
-          <Text style={{ fontSize: 24, fontWeight: 'bold', color: theme.text }}>Nutrición</Text>
+          <Text style={{ fontSize: 24, fontWeight: '800', color: theme.text }}>Nutrición</Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {plan && (
               <TouchableOpacity
-                style={{ padding: 8, backgroundColor: theme.card, borderRadius: 10, borderWidth: 1, borderColor: theme.border }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: theme.card, borderRadius: 10, borderWidth: 1, borderColor: theme.border }}
                 onPress={() => navigation.navigate('NutritionPDF', { plan })}
               >
-                <Ionicons name="document-text-outline" size={18} color={theme.primary} />
+                <Ionicons name="document-text-outline" size={15} color={theme.primary} />
+                <Text style={{ fontSize: 13, fontWeight: '600', color: theme.primary }}>Ver PDF</Text>
               </TouchableOpacity>
             )}
             {plan && (
               <TouchableOpacity
-                style={{ padding: 8, backgroundColor: theme.card, borderRadius: 10, borderWidth: 1, borderColor: theme.border }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: theme.card, borderRadius: 10, borderWidth: 1, borderColor: theme.border }}
                 onPress={() => setShowModal(true)}
                 disabled={generating}
               >
                 {generating
                   ? <ActivityIndicator size="small" color={theme.primary} />
-                  : <Ionicons name="refresh" size={18} color={theme.primary} />}
+                  : <>
+                      <Ionicons name="sparkles-outline" size={15} color={theme.primary} />
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: theme.primary }}>Nueva dieta</Text>
+                    </>}
               </TouchableOpacity>
             )}
           </View>
         </View>
+
+        {/* Tabs Hoy / Historial */}
+        {plan && (
+          <View style={{ flexDirection: 'row', marginHorizontal: 16, marginBottom: 4, backgroundColor: theme.card, borderRadius: 12, padding: 4, borderWidth: 1, borderColor: theme.border }}>
+            {[
+              { key: 'hoy', label: 'Hoy', icon: 'today-outline' },
+              { key: 'historial', label: 'Historial', icon: 'time-outline' },
+            ].map((t) => (
+              <TouchableOpacity
+                key={t.key}
+                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 9, borderRadius: 9, backgroundColor: tab === t.key ? theme.primary : 'transparent' }}
+                onPress={() => setTab(t.key)}
+              >
+                <Ionicons name={t.icon} size={14} color={tab === t.key ? '#fff' : theme.textSecondary} />
+                <Text style={{ fontSize: 13, fontWeight: '700', color: tab === t.key ? '#fff' : theme.textSecondary }}>{t.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         {!plan ? (
           <View style={{ alignItems: 'center', padding: 32, marginTop: 20 }}>
@@ -224,6 +299,8 @@ export default function NutritionScreen() {
               )}
             </TouchableOpacity>
           </View>
+        ) : tab === 'historial' ? (
+          <HistorialView historial={historial} loading={historialLoading} theme={theme} metaCalorias={metaCalorias} />
         ) : (
           <>
             {/* Resumen calorías */}
@@ -238,18 +315,28 @@ export default function NutritionScreen() {
               <View style={{ height: 8, backgroundColor: theme.bg, borderRadius: 4, marginBottom: 16, overflow: 'hidden', borderWidth: 1, borderColor: theme.border }}>
                 <View style={{ height: '100%', width: `${progresoCalorias}%`, backgroundColor: theme.primary, borderRadius: 4 }} />
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+              <View style={{ gap: 10 }}>
                 {[
                   { label: 'Proteínas', val: totalesHoy.proteinas, meta: plan.proteinas, color: theme.primary },
                   { label: 'Carbos', val: totalesHoy.carbohidratos, meta: plan.carbohidratos, color: theme.orange },
-                  { label: 'Grasas', val: totalesHoy.grasas, meta: plan.grasas, color: theme.yellow },
-                ].map((m) => (
-                  <View key={m.label} style={{ alignItems: 'center' }}>
-                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: m.color }}>{Math.round(m.val)}g</Text>
-                    <Text style={{ fontSize: 11, color: theme.textSecondary, marginTop: 2 }}>{m.label}</Text>
-                    <Text style={{ fontSize: 10, color: theme.textMuted }}>/ {Math.round(m.meta)}g</Text>
-                  </View>
-                ))}
+                  { label: 'Grasas', val: totalesHoy.grasas, meta: plan.grasas, color: theme.yellow || '#EAB308' },
+                ].map((m) => {
+                  const pct = Math.min((m.val / (m.meta || 1)) * 100, 100);
+                  return (
+                    <View key={m.label}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: theme.textSecondary }}>{m.label}</Text>
+                        <Text style={{ fontSize: 12, color: theme.textMuted }}>
+                          <Text style={{ fontWeight: '800', color: m.color }}>{Math.round(m.val)}g</Text>
+                          {' / '}{Math.round(m.meta)}g
+                        </Text>
+                      </View>
+                      <View style={{ height: 7, backgroundColor: theme.bg, borderRadius: 4, overflow: 'hidden', borderWidth: 1, borderColor: theme.border }}>
+                        <View style={{ height: '100%', width: `${pct}%`, backgroundColor: m.color, borderRadius: 4 }} />
+                      </View>
+                    </View>
+                  );
+                })}
               </View>
             </View>
 
@@ -276,31 +363,46 @@ export default function NutritionScreen() {
                   Plan de comidas
                 </Text>
                 {plan.comidas.map((comida, i) => (
-                  <View key={i} style={{ backgroundColor: theme.card, borderRadius: 14, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: theme.border }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: theme.primary + '20', justifyContent: 'center', alignItems: 'center' }}>
-                          <Ionicons name={MEAL_ICONS[comida.tipo] || 'restaurant-outline'} size={16} color={theme.primary} />
+                  <View key={i} style={{ backgroundColor: theme.card, borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: theme.border, overflow: 'hidden' }}>
+                    {/* Accent bar top */}
+                    <View style={{ height: 3, backgroundColor: theme.primary + 'CC', width: '100%' }} />
+                    <View style={{ padding: 16 }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                          <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: theme.primary + '20', justifyContent: 'center', alignItems: 'center' }}>
+                            <Ionicons name={MEAL_ICONS[comida.tipo] || 'restaurant-outline'} size={18} color={theme.primary} />
+                          </View>
+                          <View>
+                            <Text style={{ fontSize: 15, fontWeight: '700', color: theme.text }}>
+                              {MEAL_LABELS[comida.tipo] || comida.nombre || comida.tipo}
+                            </Text>
+                            {comida.hora && <Text style={{ fontSize: 11, color: theme.textMuted }}>{comida.hora}</Text>}
+                          </View>
                         </View>
-                        <View>
-                          <Text style={{ fontSize: 15, fontWeight: '700', color: theme.text }}>
-                            {MEAL_LABELS[comida.tipo] || comida.nombre || comida.tipo}
-                          </Text>
-                          {comida.hora && <Text style={{ fontSize: 11, color: theme.textMuted }}>{comida.hora}</Text>}
-                        </View>
+                        {comida.calorias && (
+                          <View style={{ backgroundColor: theme.primary + '18', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 }}>
+                            <Text style={{ fontSize: 13, fontWeight: '800', color: theme.primary }}>{comida.calorias} kcal</Text>
+                          </View>
+                        )}
                       </View>
-                      {comida.calorias && (
-                        <View style={{ backgroundColor: theme.primary + '15', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
-                          <Text style={{ fontSize: 12, fontWeight: '700', color: theme.primary }}>{comida.calorias} kcal</Text>
-                        </View>
-                      )}
-                    </View>
 
                     {(comida.proteinas || comida.carbohidratos || comida.grasas) && (
-                      <View style={{ flexDirection: 'row', gap: 14, marginBottom: 10 }}>
-                        {comida.proteinas ? <Text style={{ fontSize: 11, color: theme.primary, fontWeight: '700' }}>P: {Math.round(comida.proteinas)}g</Text> : null}
-                        {comida.carbohidratos ? <Text style={{ fontSize: 11, color: theme.orange, fontWeight: '700' }}>C: {Math.round(comida.carbohidratos)}g</Text> : null}
-                        {comida.grasas ? <Text style={{ fontSize: 11, color: theme.yellow, fontWeight: '700' }}>G: {Math.round(comida.grasas)}g</Text> : null}
+                      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+                        {comida.proteinas ? (
+                          <View style={{ backgroundColor: theme.primary + '15', paddingHorizontal: 9, paddingVertical: 4, borderRadius: 8 }}>
+                            <Text style={{ fontSize: 11, color: theme.primary, fontWeight: '700' }}>P {Math.round(comida.proteinas)}g</Text>
+                          </View>
+                        ) : null}
+                        {comida.carbohidratos ? (
+                          <View style={{ backgroundColor: theme.orange + '18', paddingHorizontal: 9, paddingVertical: 4, borderRadius: 8 }}>
+                            <Text style={{ fontSize: 11, color: theme.orange, fontWeight: '700' }}>C {Math.round(comida.carbohidratos)}g</Text>
+                          </View>
+                        ) : null}
+                        {comida.grasas ? (
+                          <View style={{ backgroundColor: '#EAB30820', paddingHorizontal: 9, paddingVertical: 4, borderRadius: 8 }}>
+                            <Text style={{ fontSize: 11, color: '#EAB308', fontWeight: '700' }}>G {Math.round(comida.grasas)}g</Text>
+                          </View>
+                        ) : null}
                       </View>
                     )}
 
@@ -318,6 +420,29 @@ export default function NutritionScreen() {
                         <Text style={{ fontSize: 12, color: theme.textMuted, fontStyle: 'italic' }}>{comida.notas}</Text>
                       </View>
                     )}
+
+                    {/* Botón registrar */}
+                    {tiposRegistradosHoy.has(comida.tipo) ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12, paddingVertical: 9, borderRadius: 10, backgroundColor: theme.primary + '15' }}>
+                        <Ionicons name="checkmark-circle" size={16} color={theme.primary} />
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: theme.primary }}>Registrado hoy</Text>
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12, paddingVertical: 10, borderRadius: 10, backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border }}
+                        onPress={() => registrarComida(comida)}
+                        disabled={registrando === comida.tipo}
+                      >
+                        {registrando === comida.tipo
+                          ? <ActivityIndicator size="small" color={theme.primary} />
+                          : <>
+                              <Ionicons name="add-circle-outline" size={16} color={theme.primary} />
+                              <Text style={{ fontSize: 13, fontWeight: '700', color: theme.primary }}>Registrar comida</Text>
+                            </>
+                        }
+                      </TouchableOpacity>
+                    )}
+                    </View>{/* end padding wrapper */}
                   </View>
                 ))}
               </View>
@@ -338,11 +463,23 @@ export default function NutritionScreen() {
 
             {comidasHoy?.registros?.length > 0 && (
               <View style={{ paddingHorizontal: 16, marginBottom: 32 }}>
-                <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.text, marginBottom: 12 }}>Registrado hoy</Text>
+                <Text style={{ fontSize: 15, fontWeight: '800', color: theme.text, marginBottom: 12 }}>Registrado hoy</Text>
                 {comidasHoy.registros.map((r) => (
-                  <View key={r.id} style={{ flexDirection: 'row', justifyContent: 'space-between', backgroundColor: theme.card, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: theme.border }}>
-                    <Text style={{ fontSize: 14, fontWeight: '600', color: theme.text, textTransform: 'capitalize' }}>{r.tipoComida}</Text>
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: theme.orange }}>{r.caloriasTotal} kcal</Text>
+                  <View key={r.id} style={{ backgroundColor: theme.card, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: theme.border }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Ionicons name={MEAL_ICONS[r.tipoComida] || 'restaurant-outline'} size={14} color={theme.primary} />
+                        <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text, textTransform: 'capitalize' }}>
+                          {MEAL_LABELS[r.tipoComida] || r.tipoComida}
+                        </Text>
+                      </View>
+                      <Text style={{ fontSize: 14, fontWeight: '800', color: theme.orange }}>{r.caloriasTotal} kcal</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                      {r.proteinasTotal > 0 && <Text style={{ fontSize: 11, color: theme.primary, fontWeight: '700' }}>P {Math.round(r.proteinasTotal)}g</Text>}
+                      {r.carbohidratosTotal > 0 && <Text style={{ fontSize: 11, color: theme.orange, fontWeight: '700' }}>C {Math.round(r.carbohidratosTotal)}g</Text>}
+                      {r.grasasTotal > 0 && <Text style={{ fontSize: 11, color: '#EAB308', fontWeight: '700' }}>G {Math.round(r.grasasTotal)}g</Text>}
+                    </View>
                   </View>
                 ))}
               </View>
@@ -429,5 +566,84 @@ export default function NutritionScreen() {
         </View>
       </Modal>
     </SafeAreaView>
+  );
+}
+
+function HistorialView({ historial, loading, theme, metaCalorias }) {
+  if (loading) {
+    return (
+      <View style={{ padding: 40, alignItems: 'center' }}>
+        <ActivityIndicator color={theme.primary} />
+      </View>
+    );
+  }
+
+  if (historial.length === 0) {
+    return (
+      <View style={{ alignItems: 'center', paddingTop: 60, paddingHorizontal: 32 }}>
+        <Ionicons name="time-outline" size={56} color={theme.border} />
+        <Text style={{ fontSize: 16, fontWeight: '700', color: theme.text, marginTop: 16 }}>Sin registros</Text>
+        <Text style={{ fontSize: 13, color: theme.textMuted, marginTop: 6, textAlign: 'center' }}>
+          Registrá tus comidas del día para verlas aquí
+        </Text>
+      </View>
+    );
+  }
+
+  const formatFecha = (fechaStr) => {
+    const d = new Date(fechaStr + 'T12:00:00');
+    const hoy = new Date();
+    const ayer = new Date(); ayer.setDate(ayer.getDate() - 1);
+    if (d.toDateString() === hoy.toDateString()) return 'Hoy';
+    if (d.toDateString() === ayer.toDateString()) return 'Ayer';
+    return d.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' }).replace(/^\w/, c => c.toUpperCase());
+  };
+
+  return (
+    <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 40 }}>
+      {historial.map((dia) => {
+        const pct = Math.min((dia.totales.calorias / (metaCalorias || 2000)) * 100, 100);
+        return (
+          <View key={dia.fecha} style={{ backgroundColor: theme.card, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: theme.border }}>
+            {/* Fecha + total calorías */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: theme.text }}>{formatFecha(dia.fecha)}</Text>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: theme.orange }}>{Math.round(dia.totales.calorias)} kcal</Text>
+            </View>
+
+            {/* Barra calórica del día */}
+            <View style={{ height: 6, backgroundColor: theme.bg, borderRadius: 3, overflow: 'hidden', borderWidth: 1, borderColor: theme.border, marginBottom: 10 }}>
+              <View style={{ height: '100%', width: `${pct}%`, backgroundColor: theme.orange, borderRadius: 3 }} />
+            </View>
+
+            {/* Macros del día */}
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+              <View style={{ backgroundColor: theme.primary + '15', paddingHorizontal: 9, paddingVertical: 4, borderRadius: 8 }}>
+                <Text style={{ fontSize: 11, color: theme.primary, fontWeight: '700' }}>P {Math.round(dia.totales.proteinas)}g</Text>
+              </View>
+              <View style={{ backgroundColor: theme.orange + '18', paddingHorizontal: 9, paddingVertical: 4, borderRadius: 8 }}>
+                <Text style={{ fontSize: 11, color: theme.orange, fontWeight: '700' }}>C {Math.round(dia.totales.carbohidratos)}g</Text>
+              </View>
+              <View style={{ backgroundColor: '#EAB30820', paddingHorizontal: 9, paddingVertical: 4, borderRadius: 8 }}>
+                <Text style={{ fontSize: 11, color: '#EAB308', fontWeight: '700' }}>G {Math.round(dia.totales.grasas)}g</Text>
+              </View>
+            </View>
+
+            {/* Comidas del día */}
+            {dia.registros.map((r) => (
+              <View key={r.id} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 7, borderTopWidth: 1, borderColor: theme.border }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+                  <Ionicons name={MEAL_ICONS[r.tipoComida] || 'restaurant-outline'} size={13} color={theme.textMuted} />
+                  <Text style={{ fontSize: 13, color: theme.textSecondary, fontWeight: '600' }}>
+                    {MEAL_LABELS[r.tipoComida] || r.tipoComida}
+                  </Text>
+                </View>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text }}>{r.caloriasTotal} kcal</Text>
+              </View>
+            ))}
+          </View>
+        );
+      })}
+    </View>
   );
 }

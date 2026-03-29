@@ -606,86 +606,105 @@ export default function RoutinesScreen({ route, navigation }) {
         )}
 
         {/* Header */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 20, paddingBottom: 12 }}>
-          <View>
-            <Text style={{ fontSize: 20, fontWeight: 'bold', color: theme.text, maxWidth: width * 0.75 }}>{rutina.nombre}</Text>
-            <Text style={{ fontSize: 12, color: theme.textSecondary, marginTop: 4 }}>
-              {rutina.diasSemana} días/semana · {rutina.duracionSemanas} semanas · {rutina.nivelDificultad}
-            </Text>
+        <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+            <Text style={{ flex: 1, fontSize: 20, fontWeight: '800', color: theme.text, lineHeight: 26, marginRight: 12 }} numberOfLines={2}>{rutina.nombre}</Text>
+            <TouchableOpacity
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: theme.card, borderRadius: 10, borderWidth: 1, borderColor: theme.border, flexShrink: 0 }}
+              onPress={() => setShowGenerarModal(true)}
+              disabled={generating}
+            >
+              {generating ? (
+                <ActivityIndicator size="small" color={theme.primary} />
+              ) : (
+                <>
+                  <Ionicons name="sparkles-outline" size={15} color={theme.primary} />
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: theme.primary }}>Nueva rutina</Text>
+                </>
+              )}
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={{ padding: 8, backgroundColor: theme.card, borderRadius: 10, borderWidth: 1, borderColor: theme.border }}
-            onPress={() => setShowGenerarModal(true)}
-            disabled={generating}
-          >
-            {generating ? (
-              <ActivityIndicator size="small" color={theme.primary} />
-            ) : (
-              <Ionicons name="refresh" size={18} color={theme.primary} />
-            )}
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {[
+              { icon: 'calendar-outline', text: `${rutina.diasSemana} días/sem` },
+              { icon: 'time-outline', text: `${rutina.duracionSemanas} sem` },
+              { icon: 'fitness-outline', text: rutina.nivelDificultad },
+            ].map((item) => (
+              <View key={item.text} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: theme.card, paddingVertical: 5, paddingHorizontal: 10, borderRadius: 20, borderWidth: 1, borderColor: theme.border }}>
+                <Ionicons name={item.icon} size={12} color={theme.primary} />
+                <Text style={{ fontSize: 12, fontWeight: '600', color: theme.textSecondary }}>{item.text}</Text>
+              </View>
+            ))}
+          </View>
         </View>
 
         {/* Selector de días */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingHorizontal: 16, marginBottom: 8 }}>
-          {dias.map((dia, index) => (
-            <TouchableOpacity
-              key={index}
-              style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: diaSeleccionado === index ? theme.primary : theme.card, marginRight: 8, borderWidth: 1, borderColor: diaSeleccionado === index ? theme.primary : theme.border }}
-              onPress={() => setDiaSeleccionado(index)}
-            >
-              <Text style={{ fontSize: 13, color: diaSeleccionado === index ? '#fff' : theme.textSecondary, fontWeight: '600' }}>
-                {dia.nombreDia || `Día ${dia.dia}`}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 4 }} style={{ marginBottom: 8 }}>
+          {dias.map((dia, index) => {
+            const isSelected = diaSeleccionado === index;
+            const cantEj = (dia.ejercicios || []).length;
+            return (
+              <TouchableOpacity
+                key={index}
+                style={{
+                  paddingHorizontal: 14, paddingVertical: 10, borderRadius: 14,
+                  backgroundColor: isSelected ? theme.primary : theme.card,
+                  marginRight: 8, borderWidth: 1,
+                  borderColor: isSelected ? theme.primary : theme.border,
+                  alignItems: 'center', minWidth: 72,
+                }}
+                onPress={() => setDiaSeleccionado(index)}
+              >
+                <Text style={{ fontSize: 13, color: isSelected ? '#fff' : theme.textSecondary, fontWeight: '700' }}>
+                  {dia.nombreDia ? dia.nombreDia.split(' ')[0] : `Día ${dia.dia}`}
+                </Text>
+                <Text style={{ fontSize: 10, color: isSelected ? 'rgba(255,255,255,0.75)' : theme.textMuted, marginTop: 2 }}>
+                  {cantEj} ejerc.
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
 
         {/* Body Highlighter */}
         {musculosHoy.length > 0 && (
-          <View style={{ paddingHorizontal: 20, marginBottom: 8 }}>
-            <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.text, marginBottom: 12 }}>Músculos del día</Text>
-            <View style={{ backgroundColor: theme.card, borderRadius: 16, paddingVertical: 12, paddingBottom: 8, borderWidth: 1, borderColor: theme.border }}>
+          <View style={{ paddingHorizontal: 20, marginBottom: 12 }}>
+            <View style={{ backgroundColor: theme.card, borderRadius: 16, paddingTop: 12, paddingBottom: 6, borderWidth: 1, borderColor: theme.border }}>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'center', marginBottom: 4 }}>Músculos del día</Text>
               <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' }}>
-              {/* Vista frontal — solo si hay músculos frontales */}
-              {musculosFront.length > 0 && (
-                <View style={{ alignItems: 'center' }}>
-                  <Text style={{ fontSize: 10, color: theme.textMuted, fontWeight: '600', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                    Frente
-                  </Text>
-                  <Body
-                    data={musculosFront}
-                    gender="male"
-                    side="front"
-                    scale={musculosFront.length > 0 && musculosBack.length > 0 ? 0.6 : 0.85}
-                    colors={['#f97316', theme.primary]}
-                  />
-                </View>
-              )}
-              {musculosBack.length > 0 && (
-                <View style={{ alignItems: 'center' }}>
-                  <Text style={{ fontSize: 10, color: theme.textMuted, fontWeight: '600', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                    Espalda
-                  </Text>
-                  <Body
-                    data={musculosBack}
-                    gender="male"
-                    side="back"
-                    scale={musculosFront.length > 0 && musculosBack.length > 0 ? 0.6 : 0.85}
-                    colors={['#f97316', theme.primary]}
-                  />
-                </View>
-              )}
+                {musculosFront.length > 0 && (
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={{ fontSize: 9, color: theme.textMuted, fontWeight: '600', marginBottom: 2, textTransform: 'uppercase', letterSpacing: 0.4 }}>Frente</Text>
+                    <Body
+                      data={musculosFront}
+                      gender="male"
+                      side="front"
+                      scale={musculosFront.length > 0 && musculosBack.length > 0 ? 0.55 : 0.75}
+                      colors={['#f97316', theme.primary]}
+                    />
+                  </View>
+                )}
+                {musculosBack.length > 0 && (
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={{ fontSize: 9, color: theme.textMuted, fontWeight: '600', marginBottom: 2, textTransform: 'uppercase', letterSpacing: 0.4 }}>Espalda</Text>
+                    <Body
+                      data={musculosBack}
+                      gender="male"
+                      side="back"
+                      scale={musculosFront.length > 0 && musculosBack.length > 0 ? 0.55 : 0.75}
+                      colors={['#f97316', theme.primary]}
+                    />
+                  </View>
+                )}
               </View>
-              {/* Leyenda */}
-              <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 20, marginTop: 4 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                  <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: theme.primary }} />
-                  <Text style={{ fontSize: 11, color: theme.textSecondary }}>Principal</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, paddingBottom: 8 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: theme.primary }} />
+                  <Text style={{ fontSize: 10, color: theme.textSecondary }}>Principal</Text>
                 </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                  <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#f97316' }} />
-                  <Text style={{ fontSize: 11, color: theme.textSecondary }}>Secundario</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#f97316' }} />
+                  <Text style={{ fontSize: 10, color: theme.textSecondary }}>Secundario</Text>
                 </View>
               </View>
             </View>
@@ -694,47 +713,100 @@ export default function RoutinesScreen({ route, navigation }) {
 
         {/* Lista de ejercicios */}
         <View style={{ paddingHorizontal: 20, paddingBottom: 12 }}>
-          <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.text, marginBottom: 12 }}>
-            Ejercicios — {diaActual.nombreDia || `Día ${diaActual.dia}`}
-          </Text>
-          {ejerciciosHoy.map((ejercicio, index) => (
-            <TouchableOpacity
-              key={index}
-              style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: theme.card, borderRadius: 14, marginBottom: 12, overflow: 'hidden', borderWidth: 1, borderColor: theme.border }}
-              onPress={() => setEjercicioModal(ejercicio)}
-            >
-              {ejercicio.gifUrl ? (
-                <Image source={{ uri: gifUrl(ejercicio.gifUrl) }} style={{ width: 72, height: 72 }} />
-              ) : (
-                <View style={{ width: 72, height: 72, backgroundColor: theme.bg, justifyContent: 'center', alignItems: 'center' }}>
-                  <Ionicons name="barbell" size={28} color={theme.primary} />
-                </View>
-              )}
-              <View style={{ flex: 1, padding: 12 }}>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: theme.text, marginBottom: 8 }}>{ejercicio.nombre}</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  {[
-                    { num: ejercicio.series, lbl: 'series' },
-                    { num: ejercicio.repeticiones, lbl: 'reps' },
-                    { num: ejercicio.descanso, lbl: 'descanso' },
-                  ].map((s, i) => (
-                    <React.Fragment key={s.lbl}>
-                      {i > 0 && <View style={{ width: 1, height: 24, backgroundColor: theme.border, marginHorizontal: 10 }} />}
-                      <View style={{ alignItems: 'center' }}>
-                        <Text style={{ fontSize: 14, fontWeight: 'bold', color: theme.primary }}>{s.num}</Text>
-                        <Text style={{ fontSize: 10, color: theme.textMuted }}>{s.lbl}</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <Text style={{ fontSize: 16, fontWeight: '800', color: theme.text }}>
+              {diaActual.nombreDia || `Día ${diaActual.dia}`}
+            </Text>
+            <Text style={{ fontSize: 12, color: theme.textMuted }}>{ejerciciosHoy.length} ejercicios</Text>
+          </View>
+          {ejerciciosHoy.map((ejercicio, index) => {
+            const mainMuscles = (ejercicio.musculos || []).slice(0, 2);
+            return (
+              <TouchableOpacity
+                key={index}
+                style={{ backgroundColor: theme.card, borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: theme.border, overflow: 'hidden' }}
+                onPress={() => setEjercicioModal(ejercicio)}
+                activeOpacity={0.75}
+              >
+                <View style={{ flexDirection: 'row' }}>
+                  {/* Thumbnail */}
+                  <View style={{ width: 88, height: 88 }}>
+                    {ejercicio.gifUrl ? (
+                      <Image source={{ uri: gifUrl(ejercicio.gifUrl) }} style={{ width: 88, height: 88 }} resizeMode="cover" />
+                    ) : (
+                      <View style={{ width: 88, height: 88, backgroundColor: theme.primary + '12', justifyContent: 'center', alignItems: 'center' }}>
+                        <Ionicons name="barbell" size={30} color={theme.primary} />
                       </View>
-                    </React.Fragment>
-                  ))}
+                    )}
+                    {/* Número */}
+                    <View style={{ position: 'absolute', top: 6, left: 6, width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', alignItems: 'center' }}>
+                      <Text style={{ fontSize: 11, fontWeight: '800', color: '#fff' }}>{index + 1}</Text>
+                    </View>
+                  </View>
+
+                  {/* Content */}
+                  <View style={{ flex: 1, padding: 12, justifyContent: 'space-between' }}>
+                    <View>
+                      <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text, marginBottom: 5 }} numberOfLines={2}>{ejercicio.nombre}</Text>
+                      {mainMuscles.length > 0 && (
+                        <View style={{ flexDirection: 'row', gap: 5, flexWrap: 'wrap' }}>
+                          {mainMuscles.map((m) => (
+                            <View key={m} style={{ backgroundColor: theme.primary + '15', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 }}>
+                              <Text style={{ fontSize: 10, color: theme.primary, fontWeight: '600', textTransform: 'capitalize' }}>{m}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      )}
+                    </View>
+
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+                      {[
+                        { num: ejercicio.series, lbl: 'series' },
+                        { num: ejercicio.repeticiones, lbl: 'reps' },
+                        { num: ejercicio.descanso, lbl: 'desc.' },
+                      ].map((s, i) => (
+                        <React.Fragment key={s.lbl}>
+                          {i > 0 && <View style={{ width: 1, height: 20, backgroundColor: theme.border, marginHorizontal: 8 }} />}
+                          <View style={{ alignItems: 'center' }}>
+                            <Text style={{ fontSize: 15, fontWeight: '800', color: theme.primary }}>{s.num}</Text>
+                            <Text style={{ fontSize: 9, color: theme.textMuted, marginTop: 1 }}>{s.lbl}</Text>
+                          </View>
+                        </React.Fragment>
+                      ))}
+                      <Ionicons name="chevron-forward" size={16} color={theme.textMuted} style={{ marginLeft: 'auto' }} />
+                    </View>
+                  </View>
                 </View>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={theme.textMuted} style={{ marginRight: 8 }} />
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {/* Botón empezar / retomar sesión */}
-        <View style={{ paddingHorizontal: 20, paddingBottom: 32, gap: 10 }}>
+        <View style={{ paddingHorizontal: 20, paddingBottom: 36, gap: 10 }}>
+          {/* Volume summary */}
+          {ejerciciosHoy.length > 0 && (
+            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, backgroundColor: theme.card, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: theme.border, marginBottom: 2 }}>
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ fontSize: 15, fontWeight: '800', color: theme.primary }}>{ejerciciosHoy.length}</Text>
+                <Text style={{ fontSize: 10, color: theme.textMuted }}>ejercicios</Text>
+              </View>
+              <View style={{ width: 1, backgroundColor: theme.border }} />
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ fontSize: 15, fontWeight: '800', color: theme.primary }}>
+                  {ejerciciosHoy.reduce((acc, e) => acc + (parseInt(e.series) || 0), 0)}
+                </Text>
+                <Text style={{ fontSize: 10, color: theme.textMuted }}>series totales</Text>
+              </View>
+              <View style={{ width: 1, backgroundColor: theme.border }} />
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ fontSize: 15, fontWeight: '800', color: theme.primary }}>
+                  ~{Math.round(ejerciciosHoy.reduce((acc, e) => acc + (parseInt(e.series) || 0) * ((parseInt(e.descanso) || 60) + 30), 0) / 60)} min
+                </Text>
+                <Text style={{ fontSize: 10, color: theme.textMuted }}>estimado</Text>
+              </View>
+            </View>
+          )}
           {tieneBorrador && (
             <TouchableOpacity
               style={{ backgroundColor: theme.orange, paddingVertical: 16, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }}
@@ -765,46 +837,75 @@ export default function RoutinesScreen({ route, navigation }) {
       {/* Modal detalle ejercicio */}
       <Modal visible={!!ejercicioModal} animationType="slide" transparent>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'flex-end' }}>
-          <View style={{ backgroundColor: theme.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '85%' }}>
-            <TouchableOpacity style={{ alignSelf: 'flex-end', padding: 4, marginBottom: 8 }} onPress={() => setEjercicioModal(null)}>
-              <Ionicons name="close" size={24} color={theme.text} />
-            </TouchableOpacity>
+          <View style={{ backgroundColor: theme.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '90%' }}>
+            {/* Drag handle */}
+            <View style={{ alignItems: 'center', paddingTop: 12, paddingBottom: 4 }}>
+              <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: theme.border }} />
+            </View>
+
             {ejercicioModal && (
-              <ScrollView showsVerticalScrollIndicator={false}>
-                <Text style={{ fontSize: 20, fontWeight: 'bold', color: theme.text, marginBottom: 16 }}>{ejercicioModal.nombre}</Text>
-                {ejercicioModal.gifUrl && (
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+                {/* GIF */}
+                {ejercicioModal.gifUrl ? (
                   <Image
                     source={{ uri: gifUrl(ejercicioModal.gifUrl) }}
-                    style={{ width: '100%', height: 220, borderRadius: 12, marginBottom: 16, backgroundColor: theme.bg }}
+                    style={{ width: '100%', height: 220, borderRadius: 16, marginBottom: 16, backgroundColor: theme.card }}
                     resizeMode="contain"
                   />
+                ) : (
+                  <View style={{ width: '100%', height: 140, borderRadius: 16, marginBottom: 16, backgroundColor: theme.primary + '12', justifyContent: 'center', alignItems: 'center' }}>
+                    <Ionicons name="barbell" size={48} color={theme.primary} />
+                  </View>
                 )}
-                <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
+
+                {/* Title + chips */}
+                <Text style={{ fontSize: 21, fontWeight: '800', color: theme.text, marginBottom: 8 }}>{ejercicioModal.nombre}</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+                  {(ejercicioModal.musculos || []).map((m) => (
+                    <View key={m} style={{ backgroundColor: theme.primary + '18', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}>
+                      <Text style={{ fontSize: 11, color: theme.primary, fontWeight: '700', textTransform: 'capitalize' }}>{m}</Text>
+                    </View>
+                  ))}
+                  {ejercicioModal.equipamiento && (
+                    <View style={{ backgroundColor: theme.card, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: theme.border, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <Ionicons name="barbell-outline" size={11} color={theme.textMuted} />
+                      <Text style={{ fontSize: 11, color: theme.textMuted, fontWeight: '600', textTransform: 'capitalize' }}>{ejercicioModal.equipamiento}</Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Stats */}
+                <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
                   {[
-                    { label: 'Series', value: ejercicioModal.series },
-                    { label: 'Repeticiones', value: ejercicioModal.repeticiones },
-                    { label: 'Descanso', value: ejercicioModal.descanso },
+                    { label: 'Series', value: ejercicioModal.series, icon: 'layers-outline' },
+                    { label: 'Repeticiones', value: ejercicioModal.repeticiones, icon: 'repeat-outline' },
+                    { label: 'Descanso', value: ejercicioModal.descanso, icon: 'timer-outline' },
                   ].map((item) => (
-                    <View key={item.label} style={{ flex: 1, backgroundColor: theme.bg, borderRadius: 10, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: theme.border }}>
-                      <Text style={{ fontSize: 18, fontWeight: 'bold', color: theme.primary }}>{item.value}</Text>
-                      <Text style={{ fontSize: 11, color: theme.textSecondary, marginTop: 2 }}>{item.label}</Text>
+                    <View key={item.label} style={{ flex: 1, backgroundColor: theme.card, borderRadius: 14, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: theme.border }}>
+                      <Ionicons name={item.icon} size={18} color={theme.primary} />
+                      <Text style={{ fontSize: 20, fontWeight: '800', color: theme.primary, marginTop: 6 }}>{item.value}</Text>
+                      <Text style={{ fontSize: 10, color: theme.textMuted, marginTop: 2 }}>{item.label}</Text>
                     </View>
                   ))}
                 </View>
+
+                {/* Instrucciones */}
                 {ejercicioModal.instrucciones && (
-                  <View style={{ backgroundColor: theme.bg, padding: 14, borderRadius: 10, marginBottom: 12, borderWidth: 1, borderColor: theme.border }}>
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text, marginBottom: 6 }}>Cómo hacerlo:</Text>
+                  <View style={{ backgroundColor: theme.card, padding: 16, borderRadius: 14, marginBottom: 12, borderWidth: 1, borderColor: theme.border }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                      <Ionicons name="list-outline" size={15} color={theme.primary} />
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text }}>Cómo hacerlo</Text>
+                    </View>
                     <Text style={{ fontSize: 13, color: theme.textSecondary, lineHeight: 20 }}>{ejercicioModal.instrucciones}</Text>
                   </View>
                 )}
+
+                {/* Notas */}
                 {ejercicioModal.notas && (
-                  <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start', backgroundColor: theme.bg, padding: 12, borderRadius: 10, marginBottom: 12, borderWidth: 1, borderColor: theme.border }}>
-                    <Ionicons name="information-circle" size={16} color={theme.primary} />
-                    <Text style={{ flex: 1, fontSize: 13, color: theme.textSecondary, lineHeight: 18 }}>{ejercicioModal.notas}</Text>
+                  <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start', backgroundColor: theme.primary + '10', padding: 14, borderRadius: 14, borderWidth: 1, borderColor: theme.primary + '30' }}>
+                    <Ionicons name="bulb-outline" size={16} color={theme.primary} style={{ marginTop: 1 }} />
+                    <Text style={{ flex: 1, fontSize: 13, color: theme.textSecondary, lineHeight: 19 }}>{ejercicioModal.notas}</Text>
                   </View>
-                )}
-                {ejercicioModal.equipamiento && (
-                  <Text style={{ fontSize: 13, color: theme.textMuted, marginBottom: 8 }}>Equipamiento: {ejercicioModal.equipamiento}</Text>
                 )}
               </ScrollView>
             )}

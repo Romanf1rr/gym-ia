@@ -86,7 +86,7 @@ const schemas = {
 
   logMeal: Joi.object({
     planNutricionalId: Joi.string().uuid().optional().allow(null),
-    tipoComida: Joi.string().valid('desayuno', 'almuerzo', 'cena', 'snack').required().messages({
+    tipoComida: Joi.string().valid('desayuno', 'almuerzo', 'cena', 'snack', 'media_manana', 'merienda').required().messages({
       'any.required': 'El tipo de comida es requerido',
       'any.only': 'Tipo de comida inválido'
     }),

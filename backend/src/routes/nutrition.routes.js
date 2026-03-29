@@ -20,4 +20,7 @@ router.post('/log', validate(schemas.logMeal), nutritionController.logMeal);
 // Comidas de hoy
 router.get('/today', nutritionController.getTodayMeals);
 
+// Historial de registros agrupados por día
+router.get('/history', nutritionController.getHistory);
+
 module.exports = router;

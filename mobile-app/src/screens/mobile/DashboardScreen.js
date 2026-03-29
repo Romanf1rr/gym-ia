@@ -20,6 +20,85 @@ const getSaludo = () => {
   return 'Buenas noches';
 };
 
+const FRASES_CHRIS = [
+  { frase: 'No pares cuando estés cansado. Para cuando hayas terminado.', emoji: '🔥' },
+  { frase: 'Cada rep cuenta. Cada kilo importa. Cada día te acerca.', emoji: '💪' },
+  { frase: 'El dolor de hoy es la fuerza de mañana.', emoji: '⚡' },
+  { frase: 'Tu cuerpo puede más de lo que tu mente cree.', emoji: '🧠' },
+  { frase: 'Consistencia > intensidad. Aparece todos los días.', emoji: '📅' },
+  { frase: 'No compares tu capítulo 1 con el capítulo 20 de otro.', emoji: '🎯' },
+  { frase: 'Sé la versión de ti que necesitabas hace un año.', emoji: '🚀' },
+  { frase: 'Un entreno malo es mejor que ningún entreno.', emoji: '✅' },
+  { frase: 'Transforma el esfuerzo de hoy en resultados de mañana.', emoji: '💎' },
+  { frase: 'La disciplina es elegir entre lo que quieres ahora y lo que querés más.', emoji: '🏆' },
+  { frase: 'Pequeñas victorias diarias = grandes cambios con el tiempo.', emoji: '📈' },
+  { frase: 'No se trata de ser perfecto. Se trata de ser mejor que ayer.', emoji: '⬆️' },
+  { frase: 'La motivación te arranca, el hábito te mantiene.', emoji: '🔄' },
+  { frase: 'Cada vez que querés parar, recordá por qué empezaste.', emoji: '💭' },
+  { frase: 'La fuerza no viene del cuerpo. Viene de la voluntad.', emoji: '🦁' },
+  { frase: 'El único mal entreno es el que no hiciste.', emoji: '🏋️' },
+  { frase: 'Construite todos los días, ladrillo a ladrillo.', emoji: '🧱' },
+  { frase: 'El sudor de hoy es el brillo de mañana.', emoji: '✨' },
+  { frase: 'Confía en el proceso. Los resultados llegan.', emoji: '⏱️' },
+  { frase: 'Sos más fuerte de lo que creés. Siempre.', emoji: '💯' },
+];
+
+const TIPS_DIA = [
+  { tip: 'Hidratate antes, durante y después del entreno. La deshidratación baja la fuerza hasta un 15%.', icon: 'water-outline' },
+  { tip: 'Dormir 7-9 horas es cuando el músculo crece. El gym lo rompe, el sueño lo construye.', icon: 'moon-outline' },
+  { tip: 'La proteína post-entreno en los primeros 30-60 minutos maximiza la síntesis muscular.', icon: 'restaurant-outline' },
+  { tip: 'El calentamiento no es opcional. Reduce lesiones y mejora el rendimiento en un 20%.', icon: 'flame-outline' },
+  { tip: 'Los músculos necesitan 48-72 hs de descanso para recuperarse completamente.', icon: 'time-outline' },
+  { tip: 'Más peso, menos reps = fuerza. Menos peso, más reps = resistencia. Sabé qué buscás.', icon: 'barbell-outline' },
+  { tip: 'Comer cada 3-4 horas mantiene el metabolismo activo y estable la glucosa.', icon: 'nutrition-outline' },
+  { tip: 'La respiración importa: exhalá en el esfuerzo, inhalá en la vuelta.', icon: 'body-outline' },
+  { tip: 'Las grasas saludables (palta, nueces, aceite de oliva) son esenciales para las hormonas.', icon: 'leaf-outline' },
+  { tip: 'El estrés eleva el cortisol, que destruye músculo. Manejarlo también es parte del entreno.', icon: 'heart-outline' },
+  { tip: 'Registrar los pesos usados te ayuda a progresar semana a semana. ¡Anotalos!', icon: 'pencil-outline' },
+  { tip: 'La creatina monohidratada es el suplemento con más evidencia científica. Segura y efectiva.', icon: 'flask-outline' },
+  { tip: 'Calentar con el 50% del peso de trabajo hace más eficientes los sets principales.', icon: 'trending-up-outline' },
+  { tip: 'Los carbohidratos no son el enemigo. Son el combustible preferido del músculo.', icon: 'sunny-outline' },
+  { tip: 'La conexión mente-músculo importa. Sentí el músculo que trabajás en cada rep.', icon: 'bulb-outline' },
+];
+
+const getDayIndex = (arr) => {
+  const start = new Date(new Date().getFullYear(), 0, 0);
+  const day = Math.floor((new Date() - start) / 86400000);
+  return day % arr.length;
+};
+
+function BannerChris({ theme }) {
+  const { frase, emoji } = FRASES_CHRIS[getDayIndex(FRASES_CHRIS)];
+  return (
+    <View style={{ marginHorizontal: 20, marginBottom: 16, backgroundColor: theme.primary + '15', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: theme.primary + '30' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+        <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: theme.primary + '25', justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ fontSize: 16 }}>🤖</Text>
+        </View>
+        <Text style={{ fontSize: 12, fontWeight: '700', color: theme.primary, textTransform: 'uppercase', letterSpacing: 0.5 }}>Chris dice hoy</Text>
+      </View>
+      <Text style={{ fontSize: 14, color: theme.text, lineHeight: 21, fontStyle: 'italic' }}>
+        {emoji}  "{frase}"
+      </Text>
+    </View>
+  );
+}
+
+function TipDelDia({ theme }) {
+  const { tip, icon } = TIPS_DIA[getDayIndex(TIPS_DIA)];
+  return (
+    <View style={{ marginHorizontal: 20, marginBottom: 16, backgroundColor: theme.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: theme.border, flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
+      <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#7C3AED20', justifyContent: 'center', alignItems: 'center', flexShrink: 0 }}>
+        <Ionicons name={icon} size={18} color="#7C3AED" />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontSize: 11, fontWeight: '700', color: '#7C3AED', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Tip del día</Text>
+        <Text style={{ fontSize: 13, color: theme.textSecondary, lineHeight: 19 }}>{tip}</Text>
+      </View>
+    </View>
+  );
+}
+
 export default function DashboardScreen({ navigation }) {
   const { user } = useAuth();
   const { theme } = useTheme();
@@ -98,6 +177,9 @@ export default function DashboardScreen({ navigation }) {
             </View>
           )}
         </View>
+
+        {/* Banner Chris */}
+        <BannerChris theme={theme} />
 
         {/* Semana en curso */}
         <View style={{ marginHorizontal: 20, backgroundColor: theme.card, borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: theme.border }}>
@@ -204,6 +286,9 @@ export default function DashboardScreen({ navigation }) {
             </TouchableOpacity>
           )}
         </View>
+
+        {/* Tip del día */}
+        <TipDelDia theme={theme} />
 
         {/* Acciones rápidas */}
         <View style={{ marginHorizontal: 20 }}>

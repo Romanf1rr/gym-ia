@@ -150,9 +150,44 @@ const getTodayMeals = async (req, res) => {
   }
 };
 
+// Historial de registros agrupados por día (últimos N días)
+const getHistory = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const days = Math.min(parseInt(req.query.days) || 7, 30);
+
+    const desde = new Date();
+    desde.setDate(desde.getDate() - (days - 1));
+    desde.setHours(0, 0, 0, 0);
+
+    const registros = await prisma.registroComida.findMany({
+      where: { userId, fecha: { gte: desde } },
+      orderBy: { fecha: 'desc' },
+    });
+
+    // Agrupar por fecha (YYYY-MM-DD)
+    const byDate = {};
+    registros.forEach((r) => {
+      const key = r.fecha.toISOString().slice(0, 10);
+      if (!byDate[key]) byDate[key] = { fecha: key, registros: [], totales: { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0 } };
+      byDate[key].registros.push(r);
+      byDate[key].totales.calorias += r.caloriasTotal;
+      byDate[key].totales.proteinas += r.proteinasTotal;
+      byDate[key].totales.carbohidratos += r.carbohidratosTotal;
+      byDate[key].totales.grasas += r.grasasTotal;
+    });
+
+    res.json(Object.values(byDate).sort((a, b) => b.fecha.localeCompare(a.fecha)));
+  } catch (error) {
+    console.error('Error obteniendo historial nutricional:', error);
+    res.status(500).json({ message: 'Error al obtener historial' });
+  }
+};
+
 module.exports = {
   generateNutritionPlan,
   getActivePlan,
   logMeal,
   getTodayMeals,
+  getHistory,
 };
