@@ -44,6 +44,7 @@ export default function AdminDashboardScreen({ navigation }) {
   const acciones = [
     { label: 'Usuarios', icon: 'people', color: theme.primary, screen: 'AdminUsers' },
     { label: 'Moderación', icon: 'shield-checkmark', color: theme.red, screen: 'AdminModeration' },
+    { label: 'Retos', icon: 'trophy', color: '#92400e', screen: 'AdminRetos' },
   ];
 
   const statItems = [

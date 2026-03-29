@@ -26,6 +26,9 @@ import NutritionPDFScreen from '../screens/mobile/NutritionPDFScreen';
 import WorkoutSessionScreen from '../screens/mobile/WorkoutSessionScreen';
 import WorkoutSummaryScreen from '../screens/mobile/WorkoutSummaryScreen';
 import EditProfileScreen from '../screens/mobile/EditProfileScreen';
+import RetosScreen from '../screens/mobile/RetosScreen';
+import RetoLeaderboardScreen from '../screens/mobile/RetoLeaderboardScreen';
+import AdminRetosScreen from '../screens/mobile/admin/AdminRetosScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -89,6 +92,7 @@ function AdminStack() {
       <Stack.Screen name="AdminMain" component={AdminDashboardScreen} options={{ headerShown: false }} />
       <Stack.Screen name="AdminUsers" component={AdminUsersScreen} options={{ title: 'Usuarios' }} />
       <Stack.Screen name="AdminModeration" component={AdminModerationScreen} options={{ title: 'Moderación' }} />
+      <Stack.Screen name="AdminRetos" component={AdminRetosScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
@@ -111,6 +115,8 @@ function MiAppStack() {
       <Stack.Screen name="PhysicalProfile" component={PhysicalProfileScreen} options={{ title: 'Perfil Físico' }} />
       <Stack.Screen name="Objetivos" component={ObjetivosScreen} options={{ title: 'Mis Objetivos' }} />
       <Stack.Screen name="Progress" component={ProgressScreen} options={{ title: 'Mi Progreso' }} />
+      <Stack.Screen name="Retos" component={RetosScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="RetoLeaderboard" component={RetoLeaderboardScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
@@ -145,6 +151,16 @@ function RoutinesStack() {
   );
 }
 
+function RetosStack() {
+  const stackOptions = useStackOptions();
+  return (
+    <Stack.Navigator screenOptions={stackOptions}>
+      <Stack.Screen name="RetosMain" component={RetosScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="RetoLeaderboard" component={RetoLeaderboardScreen} options={{ headerShown: false }} />
+    </Stack.Navigator>
+  );
+}
+
 function ClientTabs() {
   const tabBarStyle = useTabBarStyle();
   return (
@@ -154,7 +170,7 @@ function ClientTabs() {
         const icons = {
           Inicio: focused ? 'home' : 'home-outline',
           Rutinas: focused ? 'barbell' : 'barbell-outline',
-          Progreso: focused ? 'trending-up' : 'trending-up-outline',
+          Retos: focused ? 'trophy' : 'trophy-outline',
           Nutrición: focused ? 'restaurant' : 'restaurant-outline',
           Perfil: focused ? 'person' : 'person-outline',
         };
@@ -163,7 +179,7 @@ function ClientTabs() {
     })}>
       <Tab.Screen name="Inicio" component={DashboardStack} />
       <Tab.Screen name="Rutinas" component={RoutinesStack} />
-      <Tab.Screen name="Progreso" component={ProgressStack} />
+      <Tab.Screen name="Retos" component={RetosStack} />
       <Tab.Screen name="Nutrición" component={NutritionStack} />
       <Tab.Screen name="Perfil" component={ProfileStack} />
     </Tab.Navigator>

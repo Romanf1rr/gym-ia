@@ -40,6 +40,7 @@ app.use('/api/v1/nutrition', require('./routes/nutrition.routes'));
 app.use('/api/v1/chat', require('./routes/chat.routes'));
 app.use('/api/v1/admin', require('./routes/admin.routes'));
 app.use('/api/v1/objectives', require('./routes/objetivo.routes'));
+app.use('/api/v1/retos', require('./routes/retos.routes'));
 
 // 404 handler
 app.use((req, res) => {

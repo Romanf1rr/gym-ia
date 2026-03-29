@@ -25,14 +25,16 @@ model User {
   createdAt            DateTime @default(now()) @map("created_at")
   updatedAt            DateTime @updatedAt @map("updated_at")
 
-  perfilesFisicos    PerfilFisico[]
-  fotosProgreso      FotoProgreso[]
-  objetivos          Objetivo[]
-  rutinas            Rutina[]
+  perfilesFisicos     PerfilFisico[]
+  fotosProgreso       FotoProgreso[]
+  objetivos           Objetivo[]
+  rutinas             Rutina[]
   planesNutricionales PlanNutricional[]
-  entrenamientos     Entrenamiento[]
-  comidas            RegistroComida[]
-  mensajesChat       MensajeChat[]
+  entrenamientos      Entrenamiento[]
+  comidas             RegistroComida[]
+  mensajesChat        MensajeChat[]
+  retosCreados        Reto[]              @relation("RetosCreados")
+  participacionesReto ParticipacionReto[]
 
   @@map("users")
 }
@@ -183,6 +185,44 @@ model EjercicioCache {
   createdAt           DateTime @default(now()) @map("created_at")
 
   @@map("ejercicios_cache")
+}
+
+model Reto {
+  id          String   @id @default(uuid())
+  titulo      String
+  descripcion String
+  tipo        String   // 'entrenamientos' | 'volumen' | 'calorias' | 'pasos_libres'
+  meta        Float
+  unidad      String
+  premio      String
+  imagen      String?
+  fechaInicio DateTime @map("fecha_inicio")
+  fechaFin    DateTime @map("fecha_fin")
+  activo      Boolean  @default(true)
+  creadoPor   String   @map("creado_por")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  creador         User               @relation("RetosCreados", fields: [creadoPor], references: [id])
+  participaciones ParticipacionReto[]
+
+  @@map("retos")
+}
+
+model ParticipacionReto {
+  id              String    @id @default(uuid())
+  retoId          String    @map("reto_id")
+  userId          String    @map("user_id")
+  progreso        Float     @default(0)
+  completado      Boolean   @default(false)
+  fechaCompletado DateTime? @map("fecha_completado")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  reto Reto @relation(fields: [retoId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([retoId, userId])
+  @@map("participaciones_reto")
 }
 
 model MensajeChat {
