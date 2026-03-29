@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authAPI } from '../services/api/api.service';
+import cache from '../services/api/cache.service';
 
 const useAuthStore = create((set) => ({
   user: null,
@@ -57,6 +58,7 @@ const useAuthStore = create((set) => ({
       console.log('Error al hacer logout:', error);
     } finally {
       await AsyncStorage.removeItem('accessToken');
+      cache.invalidateAll();
       set({
         user: null,
         token: null,

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   ActivityIndicator, RefreshControl, Modal, Image, Dimensions, Alert, TextInput
@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import Body from 'react-native-body-highlighter';
 import { api } from '../../services/api/api.service';
+import cache from '../../services/api/cache.service';
 
 const API_BASE = (process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.65:3000/api/v1').replace('/api/v1', '');
 // Si gifUrl ya es una URL completa (Supabase) la usamos directo; si es un ID usamos el proxy
@@ -70,18 +71,19 @@ export default function RoutinesScreen({ route, navigation }) {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
 
-  const loadData = async () => {
+  const loadData = async (force = false) => {
+    if (force) cache.invalidatePrefix('routines:');
     try {
-      const [rutinaRes, usageRes, objetivoRes, todasRes] = await Promise.all([
-        api.get('/routines/active').catch(() => null),
-        api.get('/users/usage').catch(() => null),
-        api.get('/objectives/active').catch(() => null),
-        api.get('/routines').catch(() => null),
+      const [rutinaData, usageData, objetivoData, todasData] = await Promise.all([
+        cache.fetch('routines:active', () => api.get('/routines/active').then(r => r.data).catch(() => null), 30),
+        cache.fetch('routines:usage', () => api.get('/users/usage').then(r => r.data).catch(() => null), 60),
+        cache.fetch('routines:objetivo', () => api.get('/objectives/active').then(r => r.data).catch(() => null), 120),
+        cache.fetch('routines:list', () => api.get('/routines').then(r => r.data).catch(() => null), 30),
       ]);
-      setRutina(rutinaRes?.data || null);
-      setUsageInfo(usageRes?.data || null);
-      setObjetivo(objetivoRes?.data || null);
-      setTodasRutinas(todasRes?.data || []);
+      setRutina(rutinaData || null);
+      setUsageInfo(usageData || null);
+      setObjetivo(objetivoData || null);
+      setTodasRutinas(todasData || []);
     } catch {
       setRutina(null);
     } finally {
@@ -91,7 +93,6 @@ export default function RoutinesScreen({ route, navigation }) {
 
   useFocusEffect(useCallback(() => {
     loadData().then(() => {
-      // Si viene desde Objetivos pidiendo abrir el modal, hacerlo después de cargar
       if (route?.params?.abrirModal) {
         setShowGenerarModal(true);
       }
@@ -100,7 +101,7 @@ export default function RoutinesScreen({ route, navigation }) {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadData();
+    await loadData(true);
     setRefreshing(false);
   };
 
@@ -164,10 +165,12 @@ export default function RoutinesScreen({ route, navigation }) {
         lesiones: lesiones,
         duracionSesion: selectedDuracion,
       });
+      cache.invalidatePrefix('routines:');
+      cache.invalidate('dashboard:stats');
       setRutina(res.data);
       setDiaSeleccionado(0);
       setTab('activa');
-      await loadData(); // refresca lista "mis rutinas" también
+      await loadData(true);
     } catch (err) {
       const msg = err.response?.data?.message || 'Error al generar rutina';
       const esLimite = err.response?.data?.limite;
@@ -301,10 +304,10 @@ export default function RoutinesScreen({ route, navigation }) {
   const diaActual = dias[diaSeleccionado] || {};
   const ejerciciosHoy = diaActual.ejercicios || [];
 
-  const musculosHoy = [
+  const musculosHoy = useMemo(() => [
     ...mapMuscles(ejerciciosHoy.flatMap((e) => e.musculos || []), 2),
     ...mapMuscles(ejerciciosHoy.flatMap((e) => e.musculosSecundarios || []), 1),
-  ];
+  ], [diaSeleccionado, rutina?.id]);
 
   // Banner: rutina desactualizada respecto al objetivo
   const rutinaDesactualizada = rutina && objetivo &&

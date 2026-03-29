@@ -9,6 +9,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../store/authStore';
 import { useTheme } from '../../context/ThemeContext';
 import { api } from '../../services/api/api.service';
+import cache from '../../services/api/cache.service';
 
 const { width } = Dimensions.get('window');
 
@@ -28,24 +29,25 @@ export default function DashboardScreen({ navigation }) {
   const [calorias, setCalorias] = useState({ consumidas: 0, meta: 2000 });
   const [peso, setPeso] = useState(null);
 
-  const loadData = async () => {
+  const loadData = async (force = false) => {
+    if (force) {
+      cache.invalidate('dashboard:stats');
+      cache.invalidate('dashboard:nutrition');
+      cache.invalidate('dashboard:profile');
+    }
     try {
-      const [statsRes, nutritionRes, profileRes] = await Promise.all([
-        api.get('/routines/workout/stats').catch(() => null),
-        api.get('/nutrition/today').catch(() => null),
-        api.get('/physical-profiles/latest').catch(() => null),
+      const [statsData, nutritionData, profileData] = await Promise.all([
+        cache.fetch('dashboard:stats', () => api.get('/routines/workout/stats').then(r => r.data).catch(() => null), 60),
+        cache.fetch('dashboard:nutrition', () => api.get('/nutrition/today').then(r => r.data).catch(() => null), 30),
+        cache.fetch('dashboard:profile', () => api.get('/physical-profiles/latest').then(r => r.data).catch(() => null), 120),
       ]);
 
-      setStats(statsRes?.data || null);
-
-      const totales = nutritionRes?.data?.totales;
-      const planMeta = nutritionRes?.data; // /today returns { registros, totales }
+      setStats(statsData || null);
       setCalorias({
-        consumidas: totales?.calorias || 0,
-        meta: 2000, // fallback; ideally from active plan
+        consumidas: nutritionData?.totales?.calorias || 0,
+        meta: 2000,
       });
-
-      setPeso(profileRes?.data?.peso || null);
+      setPeso(profileData?.peso || null);
     } catch (e) {
       console.error('Dashboard error:', e);
     } finally {
@@ -57,7 +59,7 @@ export default function DashboardScreen({ navigation }) {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadData();
+    await loadData(true); // force = true: bypass cache on manual pull-to-refresh
     setRefreshing(false);
   };
 

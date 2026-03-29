@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { api } from '../../services/api/api.service';
+import cache from '../../services/api/cache.service';
 import { useTheme } from '../../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
@@ -92,16 +93,17 @@ export default function NutritionScreen() {
   const [horaPrimerAlimento, setHoraPrimerAlimento] = useState('7:00am');
   const [horaEntrenamiento, setHoraEntrenamiento] = useState('');
 
-  const loadData = async () => {
+  const loadData = async (force = false) => {
+    if (force) cache.invalidatePrefix('nutrition:');
     try {
-      const [planRes, hoyRes, usageRes] = await Promise.all([
-        api.get('/nutrition/active').catch(() => null),
-        api.get('/nutrition/today').catch(() => null),
-        api.get('/users/usage').catch(() => null),
+      const [planData, hoyData, usageData] = await Promise.all([
+        cache.fetch('nutrition:active', () => api.get('/nutrition/active').then(r => r.data).catch(() => null), 300),
+        cache.fetch('nutrition:today', () => api.get('/nutrition/today').then(r => r.data).catch(() => null), 30),
+        cache.fetch('routines:usage', () => api.get('/users/usage').then(r => r.data).catch(() => null), 60),
       ]);
-      setPlan(planRes?.data || null);
-      setComidasHoy(hoyRes?.data || null);
-      setUsageInfo(usageRes?.data || null);
+      setPlan(planData || null);
+      setComidasHoy(hoyData || null);
+      setUsageInfo(usageData || null);
     } finally {
       setLoading(false);
     }
@@ -111,7 +113,7 @@ export default function NutritionScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadData();
+    await loadData(true);
     setRefreshing(false);
   };
 
@@ -132,8 +134,10 @@ export default function NutritionScreen() {
         horaPrimerAlimento,
         horaEntrenamiento: horaEntrenamiento || null,
       });
+      cache.invalidatePrefix('nutrition:');
+      cache.invalidate('dashboard:nutrition');
       setPlan(res.data);
-      await loadData();
+      await loadData(true);
     } catch (err) {
       const esLimite = err.response?.data?.limite;
       Alert.alert(

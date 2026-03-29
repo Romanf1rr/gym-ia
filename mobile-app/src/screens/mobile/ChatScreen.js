@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, memo } from 'react';
 import {
   View, Text, FlatList, TextInput, TouchableOpacity,
   KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Dimensions
@@ -10,6 +10,39 @@ import { api } from '../../services/api/api.service';
 import { useTheme } from '../../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
+
+const MensajeBurbuja = memo(({ item, theme }) => {
+  const esUsuario = item.rol === 'user';
+  return (
+    <View style={{
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      marginBottom: 8,
+      justifyContent: esUsuario ? 'flex-end' : 'flex-start',
+      gap: esUsuario ? 0 : 8,
+    }}>
+      {!esUsuario && (
+        <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: theme.primary, justifyContent: 'center', alignItems: 'center' }}>
+          <Ionicons name="sparkles" size={14} color="#fff" />
+        </View>
+      )}
+      <View style={{
+        maxWidth: width * 0.75,
+        padding: 12,
+        borderRadius: 16,
+        backgroundColor: esUsuario ? theme.primary : theme.card,
+        borderBottomRightRadius: esUsuario ? 4 : 16,
+        borderBottomLeftRadius: esUsuario ? 16 : 4,
+        borderWidth: esUsuario ? 0 : 1,
+        borderColor: theme.border,
+      }}>
+        <Text style={{ fontSize: 14, lineHeight: 20, color: esUsuario ? '#fff' : theme.text }}>
+          {item.contenido}
+        </Text>
+      </View>
+    </View>
+  );
+});
 
 export default function ChatScreen() {
   const { theme } = useTheme();
@@ -87,38 +120,11 @@ export default function ChatScreen() {
     }
   };
 
-  const renderMensaje = ({ item }) => {
-    const esUsuario = item.rol === 'user';
-    return (
-      <View style={{
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        marginBottom: 8,
-        justifyContent: esUsuario ? 'flex-end' : 'flex-start',
-        gap: esUsuario ? 0 : 8,
-      }}>
-        {!esUsuario && (
-          <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: theme.primary, justifyContent: 'center', alignItems: 'center' }}>
-            <Ionicons name="sparkles" size={14} color="#fff" />
-          </View>
-        )}
-        <View style={{
-          maxWidth: width * 0.75,
-          padding: 12,
-          borderRadius: 16,
-          backgroundColor: esUsuario ? theme.primary : theme.card,
-          borderBottomRightRadius: esUsuario ? 4 : 16,
-          borderBottomLeftRadius: esUsuario ? 16 : 4,
-          borderWidth: esUsuario ? 0 : 1,
-          borderColor: theme.border,
-        }}>
-          <Text style={{ fontSize: 14, lineHeight: 20, color: esUsuario ? '#fff' : theme.text }}>
-            {item.contenido}
-          </Text>
-        </View>
-      </View>
-    );
-  };
+  const renderMensaje = useCallback(({ item }) => (
+    <MensajeBurbuja item={item} theme={theme} width={width} />
+  ), [theme]);
+
+  const keyExtractor = useCallback((item) => item.id, []);
 
   if (loading) {
     return (
@@ -183,10 +189,15 @@ export default function ChatScreen() {
           <FlatList
             ref={flatListRef}
             data={mensajes}
-            keyExtractor={(item) => item.id}
+            keyExtractor={keyExtractor}
             renderItem={renderMensaje}
             contentContainerStyle={{ padding: 16, gap: 4 }}
             onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+            initialNumToRender={20}
+            maxToRenderPerBatch={10}
+            windowSize={10}
+            removeClippedSubviews
+            keyboardDismissMode="interactive"
           />
         )}
 
