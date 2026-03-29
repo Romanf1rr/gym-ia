@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const routineController = require('../controllers/routine.controller');
+
 const authMiddleware = require('../middleware/auth.middleware');
 const validate = require('../middleware/validate.middleware');
 const { checkRoutineLimit } = require('../middleware/usageLimits.middleware');
@@ -65,5 +66,8 @@ router.get('/workout/history/:rutinaId', routineController.getWorkoutHistory);
 
 // Calendario de entrenamientos del mes
 router.get('/workout/calendar', routineController.getWorkoutCalendar);
+
+// Estadísticas del dashboard
+router.get('/workout/stats', routineController.getWorkoutStats);
 
 module.exports = router;

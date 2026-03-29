@@ -334,6 +334,113 @@ const getWorkoutCalendar = async (req, res) => {
   }
 };
 
+// Estadísticas para el dashboard: racha, semana actual, próximo día
+const getWorkoutStats = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const now = new Date();
+    const hoy = now.toISOString().split('T')[0];
+
+    // Lunes de esta semana
+    const dow = now.getDay();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
+    monday.setHours(0, 0, 0, 0);
+    const nextMonday = new Date(monday);
+    nextMonday.setDate(monday.getDate() + 7);
+
+    // Últimos 60 días para racha
+    const hace60 = new Date();
+    hace60.setDate(hace60.getDate() - 60);
+    hace60.setHours(0, 0, 0, 0);
+
+    const [estaSemana, ultimos60, rutina, ultimoEntreno] = await Promise.all([
+      prisma.entrenamiento.findMany({
+        where: { userId, completado: true, fecha: { gte: monday, lt: nextMonday } },
+        select: { id: true, fecha: true, duracion: true, ejercicios: true },
+      }),
+      prisma.entrenamiento.findMany({
+        where: { userId, completado: true, fecha: { gte: hace60 } },
+        select: { fecha: true },
+        orderBy: { fecha: 'desc' },
+      }),
+      prisma.rutina.findFirst({
+        where: { userId, activa: true },
+        select: { id: true, nombre: true, ejercicios: true, diasSemana: true },
+      }),
+      prisma.entrenamiento.findFirst({
+        where: { userId, completado: true },
+        orderBy: { fecha: 'desc' },
+        select: { ejercicios: true, fecha: true },
+      }),
+    ]);
+
+    // Días únicos entrenados
+    const diasEntrenados = [...new Set(
+      ultimos60.map(e => e.fecha.toISOString().split('T')[0])
+    )].sort().reverse();
+
+    // Calcular racha
+    let rachaActual = 0;
+    const ayer = new Date(now);
+    ayer.setDate(ayer.getDate() - 1);
+    const ayerStr = ayer.toISOString().split('T')[0];
+    const inicioRacha = diasEntrenados.includes(hoy) ? hoy
+      : diasEntrenados.includes(ayerStr) ? ayerStr : null;
+
+    if (inicioRacha) {
+      const base = new Date(inicioRacha);
+      for (let i = 0; i < diasEntrenados.length; i++) {
+        const d = new Date(base);
+        d.setDate(base.getDate() - i);
+        if (diasEntrenados.includes(d.toISOString().split('T')[0])) rachaActual++;
+        else break;
+      }
+    }
+
+    // Días de la semana (Lun-Dom)
+    const LABELS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    const diasSemana = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const ds = d.toISOString().split('T')[0];
+      return { label: LABELS[i], entrenado: diasEntrenados.includes(ds), esHoy: ds === hoy };
+    });
+
+    // Próximo día de rutina
+    let proximoDia = null;
+    if (rutina?.ejercicios?.length) {
+      const total = rutina.ejercicios.length;
+      let lastDiaIndex = -1;
+      if (ultimoEntreno?.ejercicios?.length) {
+        const diaIndexes = ultimoEntreno.ejercicios.map(e => e.diaIndex).filter(d => d !== undefined);
+        if (diaIndexes.length) lastDiaIndex = Math.max(...diaIndexes);
+      }
+      const nextIndex = lastDiaIndex >= 0 ? (lastDiaIndex + 1) % total : 0;
+      const dia = rutina.ejercicios[nextIndex];
+      proximoDia = {
+        diaIndex: nextIndex,
+        nombreDia: dia.nombreDia || `Día ${dia.dia}`,
+        cantidadEjercicios: dia.ejercicios?.length || 0,
+        musculos: [...new Set(dia.ejercicios?.flatMap(e => e.musculos || []).slice(0, 4))],
+      };
+    }
+
+    const duracionSemana = estaSemana.reduce((acc, e) => acc + (e.duracion || 0), 0);
+
+    res.json({
+      rachaActual,
+      entrenamientosEstaSemana: estaSemana.length,
+      duracionSemana,
+      diasSemana,
+      proximoDia,
+    });
+  } catch (error) {
+    console.error('Error en getWorkoutStats:', error);
+    res.status(500).json({ message: 'Error al obtener estadísticas' });
+  }
+};
+
 module.exports = {
   generateRoutine,
   getActiveRoutine,
@@ -345,4 +452,5 @@ module.exports = {
   logWorkout,
   getWorkoutHistory,
   getWorkoutCalendar,
+  getWorkoutStats,
 };
