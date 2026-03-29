@@ -8,6 +8,7 @@ const { getUsageStatus } = require('../middleware/usageLimits.middleware');
 
 router.get('/me', authMiddleware, userController.getProfile);
 router.put('/me', authMiddleware, validate(schemas.updateProfile), userController.updateProfile);
+router.post('/me/complete-onboarding', authMiddleware, userController.completeOnboarding);
 router.get('/usage', authMiddleware, getUsageStatus);
 
 module.exports = router;

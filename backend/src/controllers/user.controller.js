@@ -16,6 +16,8 @@ const userController = {
           fechaNac: true,
           genero: true,
           rol: true,
+          plan: true,
+          onboardingCompleted: true,
           createdAt: true
         }
       });
@@ -64,10 +66,25 @@ const userController = {
       res.json(user);
     } catch (error) {
       console.error('Error en updateProfile:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         message: 'Error al actualizar perfil',
-        error: error.message 
+        error: error.message
       });
+    }
+  },
+
+  async completeOnboarding(req, res) {
+    try {
+      const userId = req.user.userId;
+      const user = await prisma.user.update({
+        where: { id: userId },
+        data: { onboardingCompleted: true },
+        select: { id: true, onboardingCompleted: true }
+      });
+      res.json(user);
+    } catch (error) {
+      console.error('Error en completeOnboarding:', error);
+      res.status(500).json({ message: 'Error al completar onboarding', error: error.message });
     }
   }
 };

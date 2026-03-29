@@ -17,11 +17,12 @@ model User {
   telefono      String?
   fechaNac      DateTime? @map("fecha_nacimiento")
   genero        String?
-  rol           String   @default("cliente")
-  plan          String   @default("free")
-  activo        Boolean  @default(true)
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  rol                  String   @default("cliente")
+  plan                 String   @default("free")
+  activo               Boolean  @default(true)
+  onboardingCompleted  Boolean  @default(false) @map("onboarding_completed")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
 
   perfilesFisicos    PerfilFisico[]
   fotosProgreso      FotoProgreso[]

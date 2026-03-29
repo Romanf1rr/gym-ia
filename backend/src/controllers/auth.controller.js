@@ -1,8 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
+const prisma = require('../utils/prisma');
 
 // Registrar nuevo usuario
 exports.register = async (req, res) => {
@@ -48,7 +46,9 @@ exports.register = async (req, res) => {
         email: user.email,
         nombre: user.nombre,
         apellido: user.apellido,
-        rol: user.rol
+        rol: user.rol,
+        plan: user.plan,
+        onboardingCompleted: user.onboardingCompleted
       }
     });
   } catch (error) {
@@ -93,7 +93,9 @@ exports.login = async (req, res) => {
         email: user.email,
         nombre: user.nombre,
         apellido: user.apellido,
-        rol: user.rol
+        rol: user.rol,
+        plan: user.plan,
+        onboardingCompleted: user.onboardingCompleted
       }
     });
   } catch (error) {
